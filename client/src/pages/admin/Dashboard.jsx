@@ -1,0 +1,393 @@
+import { useQuery } from '@tanstack/react-query';
+import api from '../../utils/api';
+import { formatCurrency, formatDate } from '../../utils/helpers';
+import {
+  UsersIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
+
+export default function AdminDashboard() {
+  const { data: dashboardData, isLoading } = useQuery({
+    queryKey: ['adminDashboard'],
+    queryFn: async () => {
+      const response = await api.get('/reports/dashboard');
+      return response.data.data;
+    },
+  });
+
+  const stats = [
+    {
+      name: 'Total Students',
+      value: dashboardData?.totalStudents || 0,
+      icon: UsersIcon,
+      color: 'bg-blue-500',
+      change: '+12%',
+      changeType: 'increase',
+    },
+    {
+      name: 'Total Collected',
+      value: formatCurrency(dashboardData?.totalCollected || 0),
+      icon: CurrencyDollarIcon,
+      color: 'bg-green-500',
+      change: '+8%',
+      changeType: 'increase',
+    },
+    {
+      name: 'Pending Fees',
+      value: formatCurrency(dashboardData?.pendingFees || 0),
+      icon: ClockIcon,
+      color: 'bg-yellow-500',
+      change: '-5%',
+      changeType: 'decrease',
+    },
+    {
+      name: 'Collection Rate',
+      value: `${dashboardData?.collectionRate || 0}%`,
+      icon: CheckCircleIcon,
+      color: 'bg-primary-500',
+      change: '+3%',
+      changeType: 'increase',
+    },
+  ];
+
+  // Monthly collection chart data
+  const collectionChartData = {
+    labels: [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ],
+    datasets: [
+      {
+        label: 'Collections',
+        data: dashboardData?.monthlyCollections || [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ],
+        borderColor: 'rgb(79, 70, 229)',
+        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  // Fee breakdown doughnut chart
+  const feeBreakdownData = {
+    labels: dashboardData?.feeBreakdown?.map((f) => f.name) || [
+      'Tuition',
+      'Lab',
+      'Library',
+      'Sports',
+    ],
+    datasets: [
+      {
+        data: dashboardData?.feeBreakdown?.map((f) => f.amount) || [
+          60, 20, 10, 10,
+        ],
+        backgroundColor: [
+          'rgba(79, 70, 229, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  // Payment methods bar chart
+  const paymentMethodsData = {
+    labels: ['Online', 'Cash', 'Bank Transfer', 'Cheque'],
+    datasets: [
+      {
+        label: 'Payments',
+        data: dashboardData?.paymentMethods || [65, 20, 10, 5],
+        backgroundColor: [
+          'rgba(79, 70, 229, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(107, 114, 128, 0.8)',
+        ],
+        borderRadius: 8,
+      },
+    ],
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's your overview.</p>
+        </div>
+        <div className="flex gap-3">
+          <select className="input w-auto">
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month" selected>
+              This Month
+            </option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => (
+          <div key={stat.name} className="card">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-xl ${stat.color}`}>
+                <stat.icon className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-600">{stat.name}</p>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center text-sm">
+              {stat.changeType === 'increase' ? (
+                <ArrowUpIcon className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <ArrowDownIcon className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span
+                className={
+                  stat.changeType === 'increase'
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }
+              >
+                {stat.change}
+              </span>
+              <span className="text-gray-500 ml-1">from last month</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Collection Trend Chart */}
+        <div className="lg:col-span-2 card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Collection Trend
+          </h3>
+          <div className="h-80">
+            <Line
+              data={collectionChartData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                  },
+                  x: {
+                    grid: { display: false },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Fee Breakdown Doughnut */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Fee Breakdown
+          </h3>
+          <div className="h-64">
+            <Doughnut
+              data={feeBreakdownData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { position: 'bottom' },
+                },
+                cutout: '60%',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Second Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Payment Methods */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Payment Methods
+          </h3>
+          <div className="h-64">
+            <Bar
+              data={paymentMethodsData}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                  },
+                  x: {
+                    grid: { display: false },
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Recent Transactions */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Recent Transactions
+            </h3>
+            <a
+              href="/admin/payments"
+              className="text-primary-600 hover:text-primary-500 text-sm"
+            >
+              View all
+            </a>
+          </div>
+          <div className="space-y-4">
+            {(dashboardData?.recentPayments || [])
+              .slice(0, 5)
+              .map((payment, index) => (
+                <div
+                  key={payment.id || index}
+                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        payment.status === 'completed'
+                          ? 'bg-green-100'
+                          : 'bg-yellow-100'
+                      }`}
+                    >
+                      {payment.status === 'completed' ? (
+                        <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <ClockIcon className="h-5 w-5 text-yellow-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {payment.student?.user?.firstName}{' '}
+                        {payment.student?.user?.lastName}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {payment.receiptNumber}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">
+                      {formatCurrency(payment.amount)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(payment.paymentDate)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            {(!dashboardData?.recentPayments ||
+              dashboardData.recentPayments.length === 0) && (
+              <p className="text-gray-500 text-center py-4">
+                No recent transactions
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Alerts Section */}
+      <div className="card bg-yellow-50 border border-yellow-200">
+        <div className="flex items-start gap-4">
+          <div className="p-2 bg-yellow-100 rounded-lg">
+            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-yellow-800">Pending Actions</h3>
+            <ul className="mt-2 text-sm text-yellow-700 space-y-1">
+              <li>
+                • {dashboardData?.overduePayments || 0} students have overdue
+                payments
+              </li>
+              <li>
+                • {dashboardData?.pendingApprovals || 0} manual payments
+                awaiting approval
+              </li>
+              <li>• Fee reminder emails scheduled for tomorrow</li>
+            </ul>
+          </div>
+          <button className="text-yellow-700 hover:text-yellow-900 font-medium text-sm">
+            View Details →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

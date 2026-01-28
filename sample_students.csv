@@ -1,0 +1,6 @@
+email,firstName,lastName,class,department,course,academicYear,semester,phone
+john.doe@student.edu,John,Doe,Year 1,Computer Science,Software Engineering,2025-2026,1,0123456789
+jane.smith@student.edu,Jane,Smith,Year 2,Business Administration,Marketing,2025-2026,1,0987654321
+mike.wilson@student.edu,Mike,Wilson,Year 1,Engineering,Mechanical Engineering,2025-2026,1,0123459876
+sarah.jones@student.edu,Sarah,Jones,Year 3,Medicine,General Medicine,2025-2026,1,0987651234
+tom.brown@student.edu,Tom,Brown,Year 2,Law,Criminal Law,2025-2026,1,0123457890
