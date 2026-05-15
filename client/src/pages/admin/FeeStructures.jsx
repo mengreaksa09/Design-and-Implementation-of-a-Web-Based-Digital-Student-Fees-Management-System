@@ -39,17 +39,17 @@ export default function FeeStructures() {
   const formatAmount = (value) => {
     // Remove all non-digit characters except decimal point
     const cleaned = value.replace(/[^\d.]/g, '');
-    
+
     // If empty, return empty
     if (!cleaned) return '';
-    
+
     // Split into integer and decimal parts
     const parts = cleaned.split('.');
     const integerPart = parts[0];
-    
+
     // Add commas to integer part
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    
+
     // Return formatted value (without .00 during typing)
     return formattedInteger;
   };
@@ -193,7 +193,7 @@ export default function FeeStructures() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Clean the amount by removing commas and converting to number
     const cleanedData = {
       ...formData,
@@ -202,7 +202,7 @@ export default function FeeStructures() {
       gracePeriod: formData.gracePeriod ? parseInt(formData.gracePeriod) : 7,
       dueDay: formData.dueDay ? parseInt(formData.dueDay) : null,
     };
-    
+
     if (editingFee) {
       updateMutation.mutate({ id: editingFee.id, data: cleanedData });
     } else {
@@ -242,9 +242,9 @@ export default function FeeStructures() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Structures</h1>
+          <h1 className="text-2xl font-bold text-gray-900">រចនាសម្ព័ន្ធបង់ថ្លៃ (Fee Structures)</h1>
           <p className="text-gray-600">
-            Define and manage fee types for your institution
+            កំណត់ និងគ្រប់គ្រងប្រភេទបង់ថ្លៃសម្រាប់ស្ថាប័នរបស់អ្នក
           </p>
         </div>
         <button
@@ -252,7 +252,7 @@ export default function FeeStructures() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-5 w-5" />
-          Add Fee Structure
+          បន្ថែមរចនាសម្ព័ន្ធបង់ថ្លៃ
         </button>
       </div>
 
@@ -263,12 +263,12 @@ export default function FeeStructures() {
         </div>
       ) : fees?.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No fee structures defined yet</p>
+          <p className="text-gray-500">មិនទាន់មានរចនាសម្ព័ន្ធបង់ថ្លៃទេ</p>
           <button
             onClick={() => openModal()}
             className="mt-4 text-primary-600 hover:text-primary-500 font-medium"
           >
-            Create your first fee structure →
+            បង្កើតរចនាសម្ព័ន្ធថ្លៃដំបូងរបស់អ្នក →
           </button>
         </div>
       ) : (
@@ -312,7 +312,7 @@ export default function FeeStructures() {
               <div className="space-y-2 text-sm">
                 {fee.lateFeeValue > 0 && (
                   <div className="flex justify-between text-gray-600">
-                    <span>Late Fee:</span>
+                    <span>ថ្លៃយឺត់:</span>
                     <span>
                       {fee.lateFeeType === 'percentage'
                         ? `${fee.lateFeeValue}%`
@@ -322,19 +322,19 @@ export default function FeeStructures() {
                 )}
                 {fee.gracePeriod > 0 && (
                   <div className="flex justify-between text-gray-600">
-                    <span>Grace Period:</span>
+                    <span>រយៈពេលរ៉ោយរ៉ោ:</span>
                     <span>{fee.gracePeriod} days</span>
                   </div>
                 )}
                 {fee.department && (
                   <div className="flex justify-between text-gray-600">
-                    <span>Department:</span>
+                    <span>ជំនាញឯកទេស:</span>
                     <span>{fee.department}</span>
                   </div>
                 )}
                 {fee.course && (
                   <div className="flex justify-between text-gray-600">
-                    <span>Course:</span>
+                    <span>មុខវិជ្ជា:</span>
                     <span>{fee.course}</span>
                   </div>
                 )}
@@ -350,7 +350,7 @@ export default function FeeStructures() {
           <div className="bg-white rounded-xl w-full max-w-2xl">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                {editingFee ? 'Edit Fee Structure' : 'Add Fee Structure'}
+                {editingFee ? 'កែប្រែរចនាសម្ព័ន្ធបង់ថ្លៃ' : 'បន្ថែមរចនាសម្ព័ន្ធថ្លៃ'}
               </h2>
               <button
                 onClick={closeModal}
@@ -363,7 +363,7 @@ export default function FeeStructures() {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="label">Fee Name *</label>
+                  <label className="label">ឈ្មោះបង់ថ្លៃ (Fee Name) *</label>
                   <input
                     type="text"
                     className="input"
@@ -378,7 +378,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Fee Type *</label>
+                  <label className="label">ប្រភេទបង់ថ្លៃ (Fee Type) *</label>
                   <input
                     type="text"
                     className="input"
@@ -392,7 +392,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Amount (USD) *</label>
+                  <label className="label">ចំនួនបង់ថ្លៃ (Amount USD) *</label>
                   <input
                     type="text"
                     className="input"
@@ -411,7 +411,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Frequency *</label>
+                  <label className="label">ប្រហែល (Frequency) *</label>
                   <select
                     className="input"
                     value={formData.frequency}
@@ -430,7 +430,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="label">Description</label>
+                  <label className="label">ការពិពណ៌នា (Description)</label>
                   <textarea
                     rows={2}
                     className="input"
@@ -443,7 +443,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Due Day of Month</label>
+                  <label className="label">ថ្ងៃកំណត់នៃខែ (Due Day of Month)</label>
                   <input
                     type="number"
                     min="1"
@@ -458,7 +458,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Grace Period (days)</label>
+                  <label className="label">រយៈពេលរ៉ោយរ៉ោ (ថ្ងៃ) (Grace Period days)</label>
                   <input
                     type="number"
                     min="0"
@@ -472,7 +472,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Late Fee Type</label>
+                  <label className="label">ប្រភេទបង់ថ្លៃយឺត (Late Fee Type)</label>
                   <select
                     className="input"
                     value={formData.lateFeeType}
@@ -487,7 +487,7 @@ export default function FeeStructures() {
 
                 <div>
                   <label className="label">
-                    Late Fee{' '}
+                    ថ្លៃយឺត{' '}
                     {formData.lateFeeType === 'percentage' ? '(%)' : '($)'}
                   </label>
                   <input
@@ -503,7 +503,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">Department</label>
+                  <label className="label">ជំនាញឯកទេស (Department)</label>
                   <select
                     className="input"
                     value={formData.department}
@@ -511,11 +511,11 @@ export default function FeeStructures() {
                       setFormData({
                         ...formData,
                         department: e.target.value,
-                        course: '',
+                        course: e.target.value,
                       })
                     }
                   >
-                    <option value="">Select a department (optional)
+                    <option value="">ជ្រើសរើសជំនាញឯកទេស
                     </option>
                     {departments?.map((dept) => (
                       <option key={dept.id} value={dept.name}>
@@ -524,53 +524,7 @@ export default function FeeStructures() {
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Leave empty to apply to all departments
-                  </p>
-                </div>
-
-                <div>
-                  <label className="label">Course</label>
-                  <select
-                    className="input"
-                    value={formData.course}
-                    onChange={(e) => {
-                      const selectedCourseName = e.target.value;
-                      const selectedCourse = courses?.find(c => c.name === selectedCourseName);
-                      
-                      // Only auto-populate if name and amount are empty
-                      const updates = { course: selectedCourseName };
-                      if (selectedCourse?.tuitionFee) {
-                        if (!formData.name) {
-                          updates.name = selectedCourse.name;
-                        }
-                        if (!formData.amount) {
-                          updates.amount = formatAmount(selectedCourse.tuitionFee.toString());
-                        }
-                      }
-                      
-                      setFormData({ ...formData, ...updates });
-                    }}
-                    disabled={!formData.department}
-                  >
-                    <option value="">{formData.department ? 'Select a course (optional)' : 'Select department first'}
-                    </option>
-                    {courses
-                      ?.filter((course) => {
-                        const selectedDept = departments?.find(
-                          (dept) => dept.name === formData.department
-                        );
-                        return selectedDept && course.departmentId === selectedDept.id;
-                      })
-                      .map((course) => (
-                        <option key={course.id} value={course.name}>
-                          {course.name} {course.tuitionFee ? `- $${parseFloat(course.tuitionFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
-                        </option>
-                      ))}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.department
-                      ? 'Course tuition will auto-populate fee details'
-                      : 'Select department first'}
+                    ទុកទទេដើម្បីអនុវត្តទៅជំនាញឯកទេសទាំងអស់
                   </p>
                 </div>
               </div>
@@ -581,7 +535,7 @@ export default function FeeStructures() {
                   onClick={closeModal}
                   className="btn-secondary"
                 >
-                  Cancel
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
@@ -591,10 +545,10 @@ export default function FeeStructures() {
                   className="btn-primary"
                 >
                   {createMutation.isPending || updateMutation.isPending
-                    ? 'Saving...'
+                    ? 'កំពុងរក្សាទុក...'
                     : editingFee
-                    ? 'Update'
-                    : 'Create'}
+                      ? 'ធ្វើបច្ចុប្បន្នភាព'
+                      : 'បង្កើត'}
                 </button>
               </div>
             </form>
@@ -609,9 +563,9 @@ export default function FeeStructures() {
           setConfirmModal({ isOpen: false, feeId: null, feeName: '' })
         }
         onConfirm={confirmDelete}
-        title="Delete Fee Structure"
-        message={`Are you sure you want to delete "${confirmModal.feeName}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title="លុបរចនាសម្ព័ន្ធទឹកថ្លៃ"
+        message={`តើអ្នកពិតជាចង់លុប "${confirmModal.feeName}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`}
+        confirmText="លុប"
         type="danger"
       />
     </div>

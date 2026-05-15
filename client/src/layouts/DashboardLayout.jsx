@@ -17,6 +17,7 @@ import {
   ClipboardDocumentListIcon,
   CreditCardIcon,
   ChatBubbleLeftRightIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 
 export default function DashboardLayout() {
@@ -31,7 +32,7 @@ export default function DashboardLayout() {
     { name: 'Dashboard', href: '/admin', icon: HomeIcon },
     { name: 'Students', href: '/admin/students', icon: UserGroupIcon },
     { name: 'Departments', href: '/admin/departments', icon: AcademicCapIcon },
-    { name: 'Courses', href: '/admin/courses', icon: DocumentTextIcon },
+    { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
     {
       name: 'Fee Structures',
       href: '/admin/fee-structures',

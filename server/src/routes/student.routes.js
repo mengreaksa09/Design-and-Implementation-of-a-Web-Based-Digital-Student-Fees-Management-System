@@ -753,7 +753,7 @@ router.post(
             semester,
             status: 'active',
           };
-          
+
           console.log(`Creating student: ${email} with status: ${studentData.status}`);
           const createdStudent = await db.Student.create(studentData);
           console.log(`Student created with actual status: ${createdStudent.status}`);
@@ -866,6 +866,121 @@ router.get('/meta/departments', auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get departments',
+      error: error.message,
+    });
+  }
+});
+
+// Get student dashboard data
+router.get('/dashboard', auth, authorize('student'), async (req, res) => {
+  try {
+    // Get current student profile
+    const student = await db.Student.findOne({
+      where: { userId: req.user.id },
+    });
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found',
+      });
+    }
+
+    // Get all fee assignments for the student
+    const feeAssignments = await db.FeeAssignment.findAll({
+      where: { studentId: student.id },
+      include: [
+        {
+          model: db.FeeStructure,
+          as: 'FeeStructure',
+          attributes: ['id', 'name', 'amount', 'dueDate', 'type'],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    // Calculate fee statistics
+    let totalFees = 0;
+    let paidAmount = 0;
+    let pendingAmount = 0;
+    let overdueAmount = 0;
+    const pendingFees = [];
+
+    feeAssignments.forEach((assignment) => {
+      const total = parseFloat(assignment.totalAmount || 0);
+      const paid = parseFloat(assignment.paidAmount || 0);
+      const remaining = total - paid;
+
+      totalFees += total;
+      paidAmount += paid;
+
+      if (remaining > 0) {
+        const dueDate = assignment.FeeStructure?.dueDate || assignment.dueDate;
+        const isOverdue = dueDate && new Date(dueDate) < new Date();
+
+        if (isOverdue) {
+          overdueAmount += remaining;
+        } else {
+          pendingAmount += remaining;
+        }
+
+        // Add to pending fees list
+        pendingFees.push({
+          id: assignment.id,
+          amount: total,
+          paidAmount: paid,
+          dueDate: dueDate,
+          FeeStructure: assignment.FeeStructure,
+        });
+      }
+    });
+
+    // Get recent payments
+    const recentPayments = await db.Payment.findAll({
+      where: {
+        '$FeeAssignment.studentId$': student.id,
+      },
+      include: [
+        {
+          model: db.FeeAssignment,
+          as: 'FeeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'FeeStructure',
+              attributes: ['name'],
+            },
+          ],
+        },
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+    });
+
+    // Get notifications for the student
+    const notifications = await db.Notification.findAll({
+      where: { userId: req.user.id },
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        totalFees,
+        paidAmount,
+        pendingAmount,
+        overdueAmount,
+        pendingFees: pendingFees.slice(0, 4),
+        recentPayments,
+        notifications,
+      },
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get dashboard data',
       error: error.message,
     });
   }

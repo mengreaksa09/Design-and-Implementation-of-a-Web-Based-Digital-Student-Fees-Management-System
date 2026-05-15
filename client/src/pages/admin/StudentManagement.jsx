@@ -71,11 +71,11 @@ export default function StudentManagement() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/students/${id}`),
     onSuccess: () => {
-      toast.success('Student deleted successfully');
+      toast.success('បានលុបនិស្សិតដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['students'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete student');
+      toast.error(error.response?.data?.message || 'មិនអាចលុបនិស្សិតបានទេ');
     },
   });
 
@@ -87,9 +87,7 @@ export default function StudentManagement() {
     onSuccess: async (data) => {
       const successCount = data.data.success || 0;
       toast.success(
-        `Successfully imported ${successCount} student${
-          successCount !== 1 ? 's' : ''
-        }`
+        `បាននាំចូលនិស្សិតចំនួន ${successCount} នាក់ដោយជោគជ័យ`
       );
       setShowImportModal(false);
       setSelectedFile(null);
@@ -107,7 +105,7 @@ export default function StudentManagement() {
       await queryClient.refetchQueries({ queryKey: ['students'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Import failed');
+      toast.error(error.response?.data?.message || 'នាំចូលបរាជ័យ');
     },
   });
 
@@ -122,7 +120,7 @@ export default function StudentManagement() {
 
   const handleImport = () => {
     if (!selectedFile) {
-      toast.error('Please select a file');
+      toast.error('សូមជ្រើសរើសឯកសារ');
       return;
     }
     const formData = new FormData();
@@ -136,11 +134,11 @@ export default function StudentManagement() {
     const percentage = totalFees > 0 ? (paidFees / totalFees) * 100 : 0;
 
     if (percentage >= 100) {
-      return <span className="badge badge-success">Paid</span>;
+      return <span className="badge badge-success">បង់រួចរាល់</span>;
     } else if (percentage > 0) {
-      return <span className="badge badge-warning">Partial</span>;
+      return <span className="badge badge-warning">បង់មួយផ្នែក</span>;
     } else {
-      return <span className="badge badge-danger">Unpaid</span>;
+      return <span className="badge badge-danger">មិនទាន់បង់</span>;
     }
   };
 
@@ -150,10 +148,10 @@ export default function StudentManagement() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Student Management
+            ការគ្រប់គ្រងនិស្សិត (Student Management)
           </h1>
           <p className="text-gray-600">
-            Manage all students and their fee records
+            គ្រប់គ្រងនិស្សិតទាំងអស់ និងកំណត់ត្រាបង់ប្រាក់របស់ពួកគេ
           </p>
         </div>
         <div className="flex gap-3">
@@ -162,14 +160,14 @@ export default function StudentManagement() {
             className="btn-secondary flex items-center gap-2"
           >
             <ArrowUpTrayIcon className="h-5 w-5" />
-            Import CSV
+            នាំចូល CSV
           </button>
           <Link
             to="/admin/students/new"
             className="btn-primary flex items-center gap-2"
           >
             <PlusIcon className="h-5 w-5" />
-            Add Student
+            បន្ថែមនិស្សិត
           </Link>
         </div>
       </div>
@@ -181,7 +179,7 @@ export default function StudentManagement() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email, or student ID..."
+              placeholder="ស្វែងរកតាមឈ្មោះ អ៊ីមែល ឬលេខសម្គាល់និស្សិត..."
               className="input pl-10 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -189,19 +187,18 @@ export default function StudentManagement() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary flex items-center gap-2 ${
-              showFilters ? 'bg-gray-200' : ''
-            }`}
+            className={`btn-secondary flex items-center gap-2 ${showFilters ? 'bg-gray-200' : ''
+              }`}
           >
             <FunnelIcon className="h-5 w-5" />
-            Filters
+            ចម្រោះ
           </button>
         </div>
 
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
             <div>
-              <label className="label">Department</label>
+              <label className="label">ជំនាញឯកទេស (Department)</label>
               <select
                 className="input"
                 value={filters.department}
@@ -209,7 +206,7 @@ export default function StudentManagement() {
                   setFilters({ ...filters, department: e.target.value })
                 }
               >
-                <option value="">All Departments</option>
+                <option value="">ទាំងអស់ (All Departments)</option>
                 {departmentsData?.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
@@ -218,7 +215,7 @@ export default function StudentManagement() {
               </select>
             </div>
             <div>
-              <label className="label">Payment Status</label>
+              <label className="label">ស្ថានភាពបង់ប្រាក់ (Payment Status)</label>
               <select
                 className="input"
                 value={filters.paymentStatus}
@@ -226,10 +223,10 @@ export default function StudentManagement() {
                   setFilters({ ...filters, paymentStatus: e.target.value })
                 }
               >
-                <option value="">All Status</option>
-                <option value="paid">Fully Paid</option>
-                <option value="partial">Partial Paid</option>
-                <option value="unpaid">Unpaid</option>
+                <option value="">ស្ថានភាពទាំងអស់</option>
+                <option value="paid">បានបង់ប្រាក់ពេញលេញ</option>
+                <option value="partial">បានបង់ប្រាក់មួយផ្នែក</option>
+                <option value="unpaid">មិនទាន់បង់ប្រាក់</option>
               </select>
             </div>
           </div>
@@ -243,25 +240,25 @@ export default function StudentManagement() {
             <thead>
               <tr className="bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
+                  និស្សិត (Student)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student ID
+                  លេខសម្គាល់
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Department
+                  ជំនាញឯកទេស
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Fees
+                  ថ្លៃសិក្សាសរុប
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Paid
+                  បានបង់
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  ស្ថានភាព
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  សកម្មភាព
                 </th>
               </tr>
             </thead>
@@ -280,7 +277,7 @@ export default function StudentManagement() {
                     colSpan="7"
                     className="px-6 py-12 text-center text-gray-500"
                   >
-                    No students found
+                    រកមិនឃើញនិស្សិតទេ
                   </td>
                 </tr>
               ) : (
@@ -360,9 +357,9 @@ export default function StudentManagement() {
         {data?.pagination && data.pagination.total > 0 && (
           <div className="px-6 py-4 border-t flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Showing {(page - 1) * 10 + 1} to{' '}
-              {Math.min(page * 10, data.pagination.total)} of{' '}
-              {data.pagination.total} students
+              បង្ហាញ {(page - 1) * 10 + 1} ដល់{' '}
+              {Math.min(page * 10, data.pagination.total)} នៃ{' '}
+              {data.pagination.total} និស្សិត
             </div>
             <div className="flex gap-2">
               <button
@@ -377,11 +374,10 @@ export default function StudentManagement() {
                   <button
                     key={i + 1}
                     onClick={() => setPage(i + 1)}
-                    className={`px-4 py-2 border rounded-lg ${
-                      page === i + 1
+                    className={`px-4 py-2 border rounded-lg ${page === i + 1
                         ? 'bg-primary-600 text-white border-primary-600'
                         : 'hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {i + 1}
                   </button>
@@ -406,14 +402,14 @@ export default function StudentManagement() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Import Students
+              នាំចូលនិស្សិត
             </h3>
             <div className="space-y-4">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <ArrowUpTrayIcon className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                 <label className="cursor-pointer">
                   <span className="text-primary-600 hover:text-primary-500 font-medium">
-                    Choose a file
+                    ជ្រើសរើសឯកសារ
                   </span>
                   <input
                     type="file"
@@ -422,9 +418,9 @@ export default function StudentManagement() {
                     onChange={(e) => setSelectedFile(e.target.files[0])}
                   />
                 </label>
-                <p className="text-sm text-gray-500 mt-2">or drag and drop</p>
+                <p className="text-sm text-gray-500 mt-2">ឬទាញទម្លាក់</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  CSV or Excel files only
+                  ត្រឹមតែឯកសារ CSV ឬ Excel ប៉ុណ្ណោះ
                 </p>
               </div>
               {selectedFile && (
@@ -441,13 +437,12 @@ export default function StudentManagement() {
                 </div>
               )}
               <div className="text-sm text-gray-500">
-                <p className="font-medium mb-1">Required CSV Columns:</p>
+                <p className="font-medium mb-1">ជួរឈរ CSV ដែលតម្រូវឲ្យមាន៖</p>
                 <code className="text-xs bg-gray-100 p-2 rounded block whitespace-pre-wrap">
                   email,password,firstName,lastName,studentId,class,department
                 </code>
                 <p className="text-xs text-gray-400 mt-2">
-                  Note: email, password, firstName, lastName are required
-                  fields.
+                  ចំណាំ៖ email, password, firstName, lastName ជាកន្លែងដែលតម្រូវឲ្យបំពេញ។
                 </p>
               </div>
             </div>
@@ -459,14 +454,14 @@ export default function StudentManagement() {
                 }}
                 className="flex-1 btn-secondary"
               >
-                Cancel
+                បោះបង់
               </button>
               <button
                 onClick={handleImport}
                 disabled={!selectedFile || importMutation.isPending}
                 className="flex-1 btn-primary"
               >
-                {importMutation.isPending ? 'Importing...' : 'Import'}
+                {importMutation.isPending ? 'កំពុងនាំចូល...' : 'នាំចូល'}
               </button>
             </div>
           </div>
@@ -480,9 +475,9 @@ export default function StudentManagement() {
           setConfirmModal({ isOpen: false, studentId: null, studentName: '' })
         }
         onConfirm={confirmDelete}
-        title="Delete Student"
-        message={`Are you sure you want to delete ${confirmModal.studentName}? This action cannot be undone.`}
-        confirmText="Delete"
+        title="លុបនិស្សិត"
+        message={`តើអ្នកពិតជាចង់លុបបន្ត ${confirmModal.studentName} មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`}
+        confirmText="លុប"
         type="danger"
       />
     </div>

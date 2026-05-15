@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
@@ -39,17 +40,21 @@ ChartJS.register(
 );
 
 export default function AdminDashboard() {
+  const [dateFilter, setDateFilter] = useState('month');
+
   const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['adminDashboard'],
+    queryKey: ['adminDashboard', dateFilter],
     queryFn: async () => {
-      const response = await api.get('/reports/dashboard');
+      const response = await api.get('/reports/dashboard', {
+        params: { dateFilter },
+      });
       return response.data.data;
     },
   });
 
   const stats = [
     {
-      name: 'Total Students',
+      name: 'និស្សិតសរុប (Total Students)',
       value: dashboardData?.totalStudents || 0,
       icon: UsersIcon,
       color: 'bg-blue-500',
@@ -57,7 +62,7 @@ export default function AdminDashboard() {
       changeType: 'increase',
     },
     {
-      name: 'Total Collected',
+      name: 'ទឹកប្រាក់ទទួលបានសរុប (Total Collected)',
       value: formatCurrency(dashboardData?.totalCollected || 0),
       icon: CurrencyDollarIcon,
       color: 'bg-green-500',
@@ -65,7 +70,7 @@ export default function AdminDashboard() {
       changeType: 'increase',
     },
     {
-      name: 'Pending Fees',
+      name: 'ទឹកប្រាក់រង់ចាំបង់ (Pending Fees)',
       value: formatCurrency(dashboardData?.pendingFees || 0),
       icon: ClockIcon,
       color: 'bg-yellow-500',
@@ -73,7 +78,7 @@ export default function AdminDashboard() {
       changeType: 'decrease',
     },
     {
-      name: 'Collection Rate',
+      name: 'អត្រាទទួលបាន (Collection Rate)',
       value: `${dashboardData?.collectionRate || 0}%`,
       icon: CheckCircleIcon,
       color: 'bg-primary-500',
@@ -85,22 +90,22 @@ export default function AdminDashboard() {
   // Monthly collection chart data
   const collectionChartData = {
     labels: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'មករា',
+      'កុម្ភៈ',
+      'មីនា',
+      'មេសា',
+      'ឧសភា',
+      'មិថុនា',
+      'កក្កដា',
+      'សីហា',
+      'កញ្ញា',
+      'តុលា',
+      'វិច្ឆិកា',
+      'ធ្នូ',
     ],
     datasets: [
       {
-        label: 'Collections',
+        label: 'ការប្រមូលប្រាក់',
         data: dashboardData?.monthlyCollections || [
           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ],
@@ -115,10 +120,10 @@ export default function AdminDashboard() {
   // Fee breakdown doughnut chart
   const feeBreakdownData = {
     labels: dashboardData?.feeBreakdown?.map((f) => f.name) || [
-      'Tuition',
-      'Lab',
-      'Library',
-      'Sports',
+      'ថ្លៃបង្រៀន',
+      'មន្ទីរពិសោធន៍',
+      'បណ្ណាល័យ',
+      'កីឡា',
     ],
     datasets: [
       {
@@ -139,10 +144,10 @@ export default function AdminDashboard() {
 
   // Payment methods bar chart
   const paymentMethodsData = {
-    labels: ['Online', 'Cash', 'Bank Transfer', 'Cheque'],
+    labels: ['តាមអ៊ីនធឺណិត', 'សាច់ប្រាក់', 'ផ្ទេរតាមធនាគារ', 'មូលប្បទានប័ត្រ'],
     datasets: [
       {
-        label: 'Payments',
+        label: 'ការបង់ប្រាក់',
         data: dashboardData?.paymentMethods || [65, 20, 10, 5],
         backgroundColor: [
           'rgba(79, 70, 229, 0.8)',
@@ -168,17 +173,19 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your overview.</p>
+          <h1 className="text-2xl font-bold text-gray-900">ផ្ទាំងគ្រប់គ្រង (Dashboard)</h1>
+          <p className="text-gray-600">សូមស្វាគមន៍ត្រឡប់មកវិញ! នេះជាទិដ្ឋភាពទូទៅរបស់អ្នក</p>
         </div>
         <div className="flex gap-3">
-          <select className="input w-auto">
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month" selected>
-              This Month
-            </option>
-            <option value="year">This Year</option>
+          <select
+            className="input w-auto"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="today">ថ្ងៃនេះ</option>
+            <option value="week">សប្តាហ៍នេះ</option>
+            <option value="month">ខែនេះ</option>
+            <option value="year">ឆ្នាំនេះ</option>
           </select>
         </div>
       </div>
@@ -211,7 +218,7 @@ export default function AdminDashboard() {
               >
                 {stat.change}
               </span>
-              <span className="text-gray-500 ml-1">from last month</span>
+              <span className="text-gray-500 ml-1">ធៀបនឹងខែមុន</span>
             </div>
           </div>
         ))}
@@ -222,7 +229,7 @@ export default function AdminDashboard() {
         {/* Collection Trend Chart */}
         <div className="lg:col-span-2 card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Collection Trend
+            និន្នាការនៃការប្រមូលប្រាក់
           </h3>
           <div className="h-80">
             <Line
@@ -250,7 +257,7 @@ export default function AdminDashboard() {
         {/* Fee Breakdown Doughnut */}
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Fee Breakdown
+            ចំណាត់ថ្នាក់ថ្លៃសិក្សា
           </h3>
           <div className="h-64">
             <Doughnut
@@ -273,7 +280,7 @@ export default function AdminDashboard() {
         {/* Payment Methods */}
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Payment Methods
+            វិធីសាស្ត្របង់ប្រាក់
           </h3>
           <div className="h-64">
             <Bar
@@ -302,13 +309,13 @@ export default function AdminDashboard() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Recent Transactions
+              ប្រតិបត្តិការថ្មីៗ
             </h3>
             <a
               href="/admin/payments"
               className="text-primary-600 hover:text-primary-500 text-sm"
             >
-              View all
+              មើលទាំងអស់
             </a>
           </div>
           <div className="space-y-4">
@@ -321,11 +328,10 @@ export default function AdminDashboard() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        payment.status === 'completed'
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${payment.status === 'completed'
                           ? 'bg-green-100'
                           : 'bg-yellow-100'
-                      }`}
+                        }`}
                     >
                       {payment.status === 'completed' ? (
                         <CheckCircleIcon className="h-5 w-5 text-green-600" />
@@ -355,10 +361,10 @@ export default function AdminDashboard() {
               ))}
             {(!dashboardData?.recentPayments ||
               dashboardData.recentPayments.length === 0) && (
-              <p className="text-gray-500 text-center py-4">
-                No recent transactions
-              </p>
-            )}
+                <p className="text-gray-500 text-center py-4">
+                  គ្មានប្រតិបត្តិការថ្មីៗនេះទេ
+                </p>
+              )}
           </div>
         </div>
       </div>
@@ -370,21 +376,19 @@ export default function AdminDashboard() {
             <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-yellow-800">Pending Actions</h3>
+            <h3 className="font-semibold text-yellow-800">សកម្មភាពដែលត្រូវធ្វើ</h3>
             <ul className="mt-2 text-sm text-yellow-700 space-y-1">
               <li>
-                • {dashboardData?.overduePayments || 0} students have overdue
-                payments
+                • និស្សិតចំនួន {dashboardData?.overduePayments || 0} នាក់ មានការបង់ប្រាក់ហួសកាលកំណត់
               </li>
               <li>
-                • {dashboardData?.pendingApprovals || 0} manual payments
-                awaiting approval
+                • ការបង់ប្រាក់ចំនួន {dashboardData?.pendingApprovals || 0} រង់ចាំការអនុម័ត
               </li>
-              <li>• Fee reminder emails scheduled for tomorrow</li>
+              <li>• អ៊ីមែលរំលឹកការបង់ប្រាក់ត្រូវបានកំណត់សម្រាប់ថ្ងៃស្អែក</li>
             </ul>
           </div>
           <button className="text-yellow-700 hover:text-yellow-900 font-medium text-sm">
-            View Details →
+            មើលព័ត៌មានលម្អិត →
           </button>
         </div>
       </div>

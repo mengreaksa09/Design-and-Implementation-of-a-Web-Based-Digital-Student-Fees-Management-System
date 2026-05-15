@@ -9,31 +9,85 @@ const { parseDateRange } = require('../utils/helpers.util');
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// Dashboard summary
 router.get(
   '/dashboard',
   auth,
   authorize('admin', 'accountant'),
   async (req, res) => {
     try {
-      // Total students
+      const { dateFilter = 'month' } = req.query;
+
+      // Calculate date range based on filter
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      let startDate, endDate;
+
+      switch (dateFilter) {
+        case 'today':
+          startDate = new Date(today);
+          endDate = new Date(today);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case 'week':
+          // Get start of week (Sunday)
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - today.getDay());
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case 'month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(
+            today.getFullYear(),
+            today.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999
+          );
+          break;
+        case 'year':
+          startDate = new Date(today.getFullYear(), 0, 1);
+          endDate = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+          break;
+        default:
+          // Default to month
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+          endDate = new Date(
+            today.getFullYear(),
+            today.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999
+          );
+      }
+
+      // Total students (not filtered by date)
       const totalStudents = await db.Student.count({
         where: { status: 'active' },
       });
 
-      // Total fees collected
+      // Total fees collected (filtered by date range)
       const totalCollected =
         (await db.Payment.sum('amount', {
-          where: { status: 'completed' },
+          where: {
+            status: 'completed',
+            paymentDate: { [Op.between]: [startDate, endDate] },
+          },
         })) || 0;
 
-      // Pending fees
+      // Pending fees (not filtered by date - shows all pending)
       const pendingFees =
         (await db.FeeAssignment.sum('balanceAmount', {
           where: { status: { [Op.in]: ['pending', 'partial'] } },
         })) || 0;
 
-      // Overdue fees
+      // Overdue fees (not filtered by date - shows all overdue)
       const overdueFees =
         (await db.FeeAssignment.sum('balanceAmount', {
           where: {
@@ -43,16 +97,16 @@ router.get(
         })) || 0;
 
       // Today's collection
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(today);
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(todayStart);
       todayEnd.setHours(23, 59, 59, 999);
 
       const todayCollection =
         (await db.Payment.sum('amount', {
           where: {
             status: 'completed',
-            paymentDate: { [Op.between]: [today, todayEnd] },
+            paymentDate: { [Op.between]: [todayStart, todayEnd] },
           },
         })) || 0;
 
@@ -76,9 +130,12 @@ router.get(
           },
         })) || 0;
 
-      // Recent payments
+      // Recent payments (filtered by date range)
       const recentPayments = await db.Payment.findAll({
-        where: { status: 'completed' },
+        where: {
+          status: 'completed',
+          paymentDate: { [Op.between]: [startDate, endDate] },
+        },
         include: [
           {
             model: db.Student,
@@ -96,9 +153,12 @@ router.get(
         limit: 5,
       });
 
-      // Fee collection by type
+      // Fee collection by type (filtered by date range)
       const collectionByType = await db.Payment.findAll({
-        where: { status: 'completed' },
+        where: {
+          status: 'completed',
+          paymentDate: { [Op.between]: [startDate, endDate] },
+        },
         include: [
           {
             model: db.FeeAssignment,
@@ -148,9 +208,12 @@ router.get(
         monthlyCollections.push(monthTotal);
       }
 
-      // Payment methods breakdown
+      // Payment methods breakdown (filtered by date range)
       const paymentMethods = await db.Payment.findAll({
-        where: { status: 'completed' },
+        where: {
+          status: 'completed',
+          paymentDate: { [Op.between]: [startDate, endDate] },
+        },
         attributes: [
           'paymentMethod',
           [db.Sequelize.fn('COUNT', db.Sequelize.col('id')), 'count'],
@@ -195,6 +258,11 @@ router.get(
       res.json({
         success: true,
         data: {
+          dateFilter,
+          dateRange: {
+            start: startDate,
+            end: endDate,
+          },
           totalStudents,
           totalCollected,
           pendingFees,

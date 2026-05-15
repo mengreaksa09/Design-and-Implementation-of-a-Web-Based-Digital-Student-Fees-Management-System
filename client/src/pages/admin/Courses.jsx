@@ -61,17 +61,17 @@ export default function Courses() {
   const formatTuitionFee = (value) => {
     // Remove all non-digit characters except decimal point
     const cleaned = value.replace(/[^\d.]/g, '');
-    
+
     // If empty, return empty
     if (!cleaned) return '';
-    
+
     // Split into integer and decimal parts
     const parts = cleaned.split('.');
     const integerPart = parts[0];
-    
+
     // Add commas to integer part
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    
+
     // Return formatted value (without .00 during typing)
     return formattedInteger;
   };
@@ -222,15 +222,15 @@ export default function Courses() {
     <div>
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
-          <p className="text-gray-600">Manage academic courses</p>
+          <h1 className="text-2xl font-bold text-gray-900">មុខវិជ្ជា (Courses)</h1>
+          <p className="text-gray-600">គ្រប់គ្រងមុខវិជ្ជានានា</p>
         </div>
         <button
           onClick={() => openModal()}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
-          Add Course
+          បន្ថែមមុខវិជ្ជា
         </button>
       </div>
 
@@ -254,13 +254,12 @@ export default function Courses() {
                 </div>
               </div>
               <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  course.isActive
+                className={`px-2 py-1 text-xs font-medium rounded-full ${course.isActive
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-                }`}
+                  }`}
               >
-                {course.isActive ? 'Active' : 'Inactive'}
+                {course.isActive ? 'សកម្ម' : 'អសកម្ម'}
               </span>
             </div>
 
@@ -272,34 +271,34 @@ export default function Courses() {
 
             <div className="space-y-2 mb-4">
               <div className="text-sm">
-                <span className="text-gray-500">Department:</span>
+                <span className="text-gray-500">ជំនាញឯកទេស:</span>
                 <span className="ml-2 text-gray-900">
                   {course.department?.name}
                 </span>
               </div>
               <div className="text-sm flex gap-4">
                 <div>
-                  <span className="text-gray-500">Duration:</span>
+                  <span className="text-gray-500">រយៈពេល:</span>
                   <span className="ml-2 text-gray-900 font-medium">
                     {course.duration} years
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Credits:</span>
+                  <span className="text-gray-500">ក្រេដី:</span>
                   <span className="ml-2 text-gray-900 font-medium">
                     {course.credits}
                   </span>
                 </div>
               </div>
               <div className="text-sm">
-                <span className="text-gray-500">Level:</span>
+                <span className="text-gray-500">កម្រិត:</span>
                 <span className="ml-2 text-gray-900 capitalize">
                   {course.level}
                 </span>
               </div>
               {course.tuitionFee && (
                 <div className="text-sm">
-                  <span className="text-gray-500">Tuition:</span>
+                  <span className="text-gray-500">ថ្លៃសិក្សា:</span>
                   <span className="ml-2 text-gray-900 font-medium">
                     ${parseFloat(course.tuitionFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
@@ -313,14 +312,14 @@ export default function Courses() {
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
               >
                 <PencilSquareIcon className="h-4 w-4" />
-                Edit
+                កែប្រែ
               </button>
               <button
                 onClick={() => handleDelete(course)}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
               >
                 <TrashIcon className="h-4 w-4" />
-                Delete
+                លុប
               </button>
             </div>
           </div>
@@ -333,7 +332,7 @@ export default function Courses() {
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">
-                {editingCourse ? 'Edit Course' : 'Add Course'}
+                {editingCourse ? 'កែប្រែមុខវិជ្ជា' : 'បន្ថែមមុខវិជ្ជា'}
               </h2>
               <button
                 onClick={closeModal}
@@ -347,7 +346,7 @@ export default function Courses() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Course Code *
+                    លេខកូដមុខវិជ្ជា (Course Code) *
                   </label>
                   <input
                     type="text"
@@ -367,7 +366,7 @@ export default function Courses() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Course Name *
+                    ឈ្មោះមុខវិជ្ជា (Course Name) *
                   </label>
                   <input
                     type="text"
@@ -384,7 +383,7 @@ export default function Courses() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  ការពិពណ៌នា (Description)
                 </label>
                 <textarea
                   value={formData.description}
@@ -400,7 +399,7 @@ export default function Courses() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department *
+                    ជំនាញឯកទេស (Department) *
                   </label>
                   <select
                     required
@@ -411,7 +410,7 @@ export default function Courses() {
                     }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="" disabled>Select Department</option>
+                    <option value="" disabled>ជ្រើសរើសជំនាញឯកទេស</option>
                     {departments?.map((dept) => (
                       <option key={dept.id} value={dept.id}>
                         {dept.name} ({dept.code})
@@ -422,7 +421,7 @@ export default function Courses() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Level *
+                    កម្រិត (Level) *
                   </label>
                   <select
                     required
@@ -444,7 +443,7 @@ export default function Courses() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Duration (Years) *
+                    រយៈពេល (ឆ្នាំ) (Duration Years) *
                   </label>
                   <input
                     type="number"
@@ -461,7 +460,7 @@ export default function Courses() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Credits *
+                    ក្រេដី (Credits) *
                   </label>
                   <input
                     type="number"
@@ -478,7 +477,7 @@ export default function Courses() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tuition Fee (USD)
+                    ថ្លៃសិក្សា (Tuition Fee USD)
                   </label>
                   <input
                     type="text"
@@ -500,7 +499,7 @@ export default function Courses() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Coordinator
+                    អ្នកសម្របស្រប (Coordinator)
                   </label>
                   <input
                     type="text"
@@ -515,7 +514,7 @@ export default function Courses() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max Students
+                    ចំនួននិស្សិតអទិទ្ធ (Max Students)
                   </label>
                   <input
                     type="number"
@@ -532,7 +531,7 @@ export default function Courses() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Admission Requirements
+                  លក្ខខណ្ឌការចូលរួម (Admission Requirements)
                 </label>
                 <textarea
                   value={formData.admissionRequirements}
@@ -550,7 +549,7 @@ export default function Courses() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Accreditation
+                  ស្នាំស្គាល់ (Accreditation)
                 </label>
                 <input
                   type="text"
@@ -569,7 +568,7 @@ export default function Courses() {
                   onClick={closeModal}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  Cancel
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
@@ -579,10 +578,10 @@ export default function Courses() {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {createMutation.isPending || updateMutation.isPending
-                    ? 'Saving...'
+                    ? 'កំពុងរក្សាទុក...'
                     : editingCourse
-                    ? 'Update'
-                    : 'Create'}
+                      ? 'ធ្វើបច្ចុប្បន្នភាព'
+                      : 'បង្កើត'}
                 </button>
               </div>
             </form>
@@ -597,8 +596,8 @@ export default function Courses() {
           setConfirmModal({ isOpen: false, courseId: null, courseName: '' })
         }
         onConfirm={confirmDelete}
-        title="Delete Course"
-        message={`Are you sure you want to delete "${confirmModal.courseName}"? This action cannot be undone.`}
+        title="លុបមុខវិជ្ជា"
+        message={`តើអ្នកពិតជាចង់លុប "${confirmModal.courseName}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`}
       />
     </div>
   );

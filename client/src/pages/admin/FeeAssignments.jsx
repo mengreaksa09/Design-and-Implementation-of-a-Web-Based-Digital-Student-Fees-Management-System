@@ -94,8 +94,7 @@ export default function FeeAssignments() {
 
       if (assigned > 0) {
         toast.success(
-          `Fee assigned to ${assigned} student(s)${
-            failed > 0 ? `, ${failed} failed (already assigned)` : ''
+          `Fee assigned to ${assigned} student(s)${failed > 0 ? `, ${failed} failed (already assigned)` : ''
           }`
         );
       } else if (failed > 0) {
@@ -187,13 +186,13 @@ export default function FeeAssignments() {
     const totalAmount = parseFloat(assignment.totalAmount || 0);
 
     if (paidAmount >= totalAmount && totalAmount > 0) {
-      return <span className="badge badge-success">Paid</span>;
+      return <span className="badge badge-success">ទូទាត់រួច</span>;
     } else if (paidAmount > 0) {
-      return <span className="badge badge-warning">Partial</span>;
+      return <span className="badge badge-warning">ប៉័នមានមួយផ្នែក</span>;
     } else if (new Date(assignment.dueDate) < new Date()) {
-      return <span className="badge badge-danger">Overdue</span>;
+      return <span className="badge badge-danger">យឺត់កំណត់</span>;
     } else {
-      return <span className="badge bg-gray-100 text-gray-700">Pending</span>;
+      return <span className="badge bg-gray-100 text-gray-700">កំពុងរោចំណាត់</span>;
     }
   };
 
@@ -202,9 +201,9 @@ export default function FeeAssignments() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Assignments</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ការចំណាត់ទឹកថ្លៃ (Fee Assignments)</h1>
           <p className="text-gray-600">
-            Assign fees to students and track payments
+            ចំណាត់ទឹកថ្លៃទៅនិស្សិតនិងតាមដានការទូទាត់
           </p>
         </div>
         <button
@@ -212,14 +211,14 @@ export default function FeeAssignments() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-5 w-5" />
-          Assign Fee
+          ចំណាត់ទឹកថ្លៃ
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card bg-blue-50 border border-blue-200">
-          <p className="text-sm text-blue-600">Total Assigned</p>
+          <p className="text-sm text-blue-600">ស្រុបចំណាត់</p>
           <p className="text-2xl font-bold text-blue-900">
             {formatCurrency(
               assignments?.reduce(
@@ -230,7 +229,7 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-green-50 border border-green-200">
-          <p className="text-sm text-green-600">Collected</p>
+          <p className="text-sm text-green-600">បានទឹកមក</p>
           <p className="text-2xl font-bold text-green-900">
             {formatCurrency(
               assignments?.reduce(
@@ -241,7 +240,7 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-yellow-50 border border-yellow-200">
-          <p className="text-sm text-yellow-600">Pending</p>
+          <p className="text-sm text-yellow-600">កំពុងរោចំណាត់</p>
           <p className="text-2xl font-bold text-yellow-900">
             {formatCurrency(
               assignments?.reduce(
@@ -252,7 +251,7 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-red-50 border border-red-200">
-          <p className="text-sm text-red-600">Overdue</p>
+          <p className="text-sm text-red-600">យឺត់កំណត់</p>
           <p className="text-2xl font-bold text-red-900">
             {assignments?.filter(
               (a) =>
@@ -270,25 +269,25 @@ export default function FeeAssignments() {
             <thead>
               <tr className="bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
+                  និស្សិត
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fee Type
+                  ប្រភេទទឹកថ្លៃ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  ចំនួនទឹក
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Paid
+                  បានទូទាត់
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Due Date
+                  ថ្ងៃកំណត់
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  ស្ថានភាព
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  សកម្មភាព
                 </th>
               </tr>
             </thead>
@@ -307,7 +306,7 @@ export default function FeeAssignments() {
                     colSpan="7"
                     className="px-6 py-12 text-center text-gray-500"
                   >
-                    No fee assignments yet
+                    មិនទាន់មានការចំណាត់ទឹកថ្លៃទេ
                   </td>
                 </tr>
               ) : (
@@ -349,7 +348,7 @@ export default function FeeAssignments() {
                         }
                         className="text-red-600 hover:text-red-800 text-sm font-medium"
                       >
-                        Remove
+                        លុប
                       </button>
                     </td>
                   </tr>
@@ -366,7 +365,7 @@ export default function FeeAssignments() {
           <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                Assign Fee
+                ចំណាត់ទឹកថ្លៃ
               </h2>
               <button
                 onClick={closeModal}
@@ -379,7 +378,7 @@ export default function FeeAssignments() {
             <div className="p-6 space-y-6">
               {/* Assignment Type */}
               <div>
-                <label className="label">Assignment Type</label>
+                <label className="label">ប្រភេទចំណាត់ (Assignment Type)</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -390,7 +389,7 @@ export default function FeeAssignments() {
                       onChange={(e) => setAssignType(e.target.value)}
                       className="text-primary-600"
                     />
-                    <span>Individual Students</span>
+                    <span>និស្សិតមួយៗមួយ</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -401,7 +400,7 @@ export default function FeeAssignments() {
                       onChange={(e) => setAssignType(e.target.value)}
                       className="text-primary-600"
                     />
-                    <span>By Course</span>
+                    <span>តាមមុខវិជ្ជា</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -412,7 +411,7 @@ export default function FeeAssignments() {
                       onChange={(e) => setAssignType(e.target.value)}
                       className="text-primary-600"
                     />
-                    <span>All Students</span>
+                    <span>និស្សិតទាំងអស់</span>
                   </label>
                 </div>
               </div>
@@ -420,7 +419,7 @@ export default function FeeAssignments() {
               {/* Fee Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Fee Structure *</label>
+                  <label className="label">រចនាសម្ព័ន្ធទឹកថ្លៃ (Fee Structure) *</label>
                   <select
                     className="input"
                     value={selectedFee}
@@ -435,7 +434,7 @@ export default function FeeAssignments() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">Due Date *</label>
+                  <label className="label">ថ្ងៃកំណត់ (Due Date) *</label>
                   <input
                     type="date"
                     className="input"
@@ -449,9 +448,9 @@ export default function FeeAssignments() {
               {/* Class Filter */}
               {assignType === 'course' && (
                 <div>
-                  <label className="label">Select Course</label>
+                  <label className="label">ជ្រើសរើសមុខវិជ្ជា</label>
                   <select id="courseFilter" className="input" defaultValue="">
-                    <option value="" disabled>Choose a course</option>
+                    <option value="" disabled>ជ្រើសរើសមុខវិជ្ជាមួយ</option>
                     {courses?.map((course) => (
                       <option key={course.id} value={course.id}>
                         {course.name}
@@ -464,7 +463,7 @@ export default function FeeAssignments() {
               {/* Student Selection */}
               {assignType === 'individual' && (
                 <div>
-                  <label className="label">Select Students</label>
+                  <label className="label">ជ្រើសរើសនិស្សិត</label>
                   <div className="relative mb-4">
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
@@ -529,11 +528,11 @@ export default function FeeAssignments() {
                   <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-yellow-800">
-                      Assigning to all students
+                      កំពុងកំណាត់ទៅនិស្សិតទាំងអស់
                     </p>
                     <p className="text-sm text-yellow-700">
-                      This will assign the selected fee to all{' '}
-                      {students?.length || 0} students in the system.
+                      នេះនឹងកំណាត់បង់ថ្លៃដែលបានជ្រើសរើសទៅនិស្សិតទាំងអស់{' '}
+                      {students?.length || 0} នាំក្នុងប្រព័ន្ធ។
                     </p>
                   </div>
                 </div>
@@ -542,14 +541,14 @@ export default function FeeAssignments() {
 
             <div className="flex justify-end gap-4 p-6 border-t">
               <button onClick={closeModal} className="btn-secondary">
-                Cancel
+                បោះបង់
               </button>
               <button
                 onClick={handleAssign}
                 disabled={assignMutation.isPending}
                 className="btn-primary"
               >
-                {assignMutation.isPending ? 'Assigning...' : 'Assign Fee'}
+                {assignMutation.isPending ? 'កំពុងកំណាត់...' : 'កំណាត់បង់ថ្លៃ'}
               </button>
             </div>
           </div>
@@ -564,9 +563,9 @@ export default function FeeAssignments() {
           deleteMutation.mutate(confirmModal.assignmentId);
           setConfirmModal({ isOpen: false, assignmentId: null });
         }}
-        title="Remove Fee Assignment"
-        message="Are you sure you want to remove this fee assignment?"
-        confirmText="Remove"
+        title="លុបការកំណាត់បង់ថ្លៃ"
+        message="តើអ្នកពិតជាចង់លុបការកំណាត់បង់ថ្លៃនេះមែនទេ?"
+        confirmText="លុប"
         type="danger"
       />
     </div>

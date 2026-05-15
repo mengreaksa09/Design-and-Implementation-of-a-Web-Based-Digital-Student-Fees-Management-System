@@ -38,23 +38,23 @@ export default function Departments() {
     if (!value || value.length === 0) {
       return '+855 ';
     }
-    
+
     // Remove all spaces
     let cleaned = value.replace(/\s/g, '');
-    
+
     // Ensure it starts with +855
     if (!cleaned.startsWith('+855')) {
       cleaned = '+855' + cleaned.replace(/^\+?\d{0,3}/, '');
     }
-    
+
     // Format: +855 XX XXX XXX XXX
     const prefix = '+855';
     const digits = cleaned.slice(4); // Get digits after +855
-    
+
     if (digits.length === 0) {
       return prefix + ' ';
     }
-    
+
     // Format as: XX XXX XXX XXX (2 digits, space, 3 digits, space, 3 digits, space, 3 digits)
     let formatted = prefix + ' ';
     for (let i = 0; i < digits.length; i++) {
@@ -63,7 +63,7 @@ export default function Departments() {
       }
       formatted += digits[i];
     }
-    
+
     return formatted;
   };
 
@@ -219,15 +219,15 @@ export default function Departments() {
     <div>
       <div className="mb-6 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
-          <p className="text-gray-600">Manage academic departments</p>
+          <h1 className="text-2xl font-bold text-gray-900">ជំនាញឯកទេស (Departments)</h1>
+          <p className="text-gray-600">គ្រប់គ្រងជំនាញឯកទេសនានា</p>
         </div>
         <button
           onClick={() => openModal()}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
-          Add Department
+          បន្ថែមជំនាញឯកទេស
         </button>
       </div>
 
@@ -251,13 +251,12 @@ export default function Departments() {
                 </div>
               </div>
               <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  department.isActive
+                className={`px-2 py-1 text-xs font-medium rounded-full ${department.isActive
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-                }`}
+                  }`}
               >
-                {department.isActive ? 'Active' : 'Inactive'}
+                {department.isActive ? 'សកម្ម' : 'អសកម្ម'}
               </span>
             </div>
 
@@ -270,7 +269,7 @@ export default function Departments() {
             <div className="space-y-2 mb-4">
               {department.headOfDepartment && (
                 <div className="text-sm">
-                  <span className="text-gray-500">HOD:</span>
+                  <span className="text-gray-500">ប្រធាន:</span>
                   <span className="ml-2 text-gray-900">
                     {department.headOfDepartment}
                   </span>
@@ -278,14 +277,14 @@ export default function Departments() {
               )}
               {department.location && (
                 <div className="text-sm">
-                  <span className="text-gray-500">Location:</span>
+                  <span className="text-gray-500">ទីតាំង:</span>
                   <span className="ml-2 text-gray-900">
                     {department.location}
                   </span>
                 </div>
               )}
               <div className="text-sm">
-                <span className="text-gray-500">Courses:</span>
+                <span className="text-gray-500">មុខវិជ្ជា:</span>
                 <span className="ml-2 text-gray-900 font-medium">
                   {department.courses?.length || 0}
                 </span>
@@ -298,14 +297,14 @@ export default function Departments() {
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
               >
                 <PencilSquareIcon className="h-4 w-4" />
-                Edit
+                កែប្រែ
               </button>
               <button
                 onClick={() => handleDelete(department)}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
               >
                 <TrashIcon className="h-4 w-4" />
-                Delete
+                លុប
               </button>
             </div>
           </div>
@@ -318,7 +317,7 @@ export default function Departments() {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">
-                {editingDepartment ? 'Edit Department' : 'Add Department'}
+                {editingDepartment ? 'កែប្រែជំនាញឯកទេស' : 'បន្ថែមជំនាញឯកទេស'}
               </h2>
               <button
                 onClick={closeModal}
@@ -332,7 +331,7 @@ export default function Departments() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department Code *
+                    លេខកូដជំនាញ (Department Code) *
                   </label>
                   <input
                     type="text"
@@ -352,7 +351,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department Name *
+                    ឈ្មោះជំនាញឯកទេស (Department Name) *
                   </label>
                   <input
                     type="text"
@@ -369,7 +368,7 @@ export default function Departments() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  ការពិពណ៌នា (Description)
                 </label>
                 <textarea
                   value={formData.description}
@@ -385,7 +384,7 @@ export default function Departments() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Head of Department
+                    ប្រធានជំនាញឯកទេស (Head of Department)
                   </label>
                   <input
                     type="text"
@@ -403,7 +402,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location
+                    ទីតាំង (Location)
                   </label>
                   <input
                     type="text"
@@ -420,7 +419,7 @@ export default function Departments() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    អ៊ីមែល (Email)
                   </label>
                   <input
                     type="email"
@@ -435,7 +434,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                    លេខទូរស័ព្ទ (Phone)
                   </label>
                   <input
                     type="tel"
@@ -458,7 +457,7 @@ export default function Departments() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Established Year
+                    ឆ្នាំបង្កើត (Established Year)
                   </label>
                   <input
                     type="number"
@@ -478,7 +477,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Faculty Count
+                    ចំនួនគ្រូបង្រៀន (Faculty Count)
                   </label>
                   <input
                     type="number"
@@ -497,7 +496,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Student Capacity
+                    សមត្ថភាពដាក់និស្សិត (Student Capacity)
                   </label>
                   <input
                     type="number"
@@ -521,7 +520,7 @@ export default function Departments() {
                   onClick={closeModal}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
-                  Cancel
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
@@ -531,10 +530,10 @@ export default function Departments() {
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {createMutation.isPending || updateMutation.isPending
-                    ? 'Saving...'
+                    ? 'កំពុងរក្សាទុក...'
                     : editingDepartment
-                    ? 'Update'
-                    : 'Create'}
+                      ? 'ធ្វើបច្ចុប្បន្នភាព'
+                      : 'បង្កើត'}
                 </button>
               </div>
             </form>
@@ -553,8 +552,8 @@ export default function Departments() {
           })
         }
         onConfirm={confirmDelete}
-        title="Delete Department"
-        message={`Are you sure you want to delete "${confirmModal.departmentName}"? This action cannot be undone.`}
+        title="លុបជំនាញឯកទេស"
+        message={`តើអ្នកពិតជាចង់លុប "${confirmModal.departmentName}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`}
       />
     </div>
   );

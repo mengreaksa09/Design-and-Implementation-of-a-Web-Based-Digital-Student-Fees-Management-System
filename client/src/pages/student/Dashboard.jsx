@@ -25,25 +25,25 @@ export default function StudentDashboard() {
 
   const stats = [
     {
-      name: 'Total Fees',
+      name: 'ថ្លៃសិក្សាសរុប (Total Fees)',
       value: formatCurrency(dashboardData?.totalFees || 0),
       icon: CurrencyDollarIcon,
       color: 'bg-blue-500',
     },
     {
-      name: 'Paid Amount',
+      name: 'ទឹកប្រាក់បានបង់ (Paid Amount)',
       value: formatCurrency(dashboardData?.paidAmount || 0),
       icon: CheckCircleIcon,
       color: 'bg-green-500',
     },
     {
-      name: 'Pending Amount',
+      name: 'ទឹកប្រាក់រង់ចាំបង់ (Pending Amount)',
       value: formatCurrency(dashboardData?.pendingAmount || 0),
       icon: ClockIcon,
       color: 'bg-yellow-500',
     },
     {
-      name: 'Overdue Amount',
+      name: 'ទឹកប្រាក់ហួសកាលកំណត់ (Overdue Amount)',
       value: formatCurrency(dashboardData?.overdueAmount || 0),
       icon: ExclamationTriangleIcon,
       color: 'bg-red-500',
@@ -65,17 +65,17 @@ export default function StudentDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold">
-              Welcome back, {user?.firstName}! 👋
+              សូមស្វាគមន៍ត្រឡប់មកវិញ, {user?.firstName}! 👋
             </h1>
             <p className="text-primary-100 mt-1">
-              Here's an overview of your fee status
+              នេះជាទិដ្ឋភាពទូទៅនៃស្ថានភាពបង់ប្រាក់របស់អ្នក
             </p>
           </div>
           <Link
             to="/student/pay"
             className="mt-4 md:mt-0 inline-flex items-center gap-2 bg-white text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
           >
-            Make Payment
+            បង់ប្រាក់ឥឡូវនេះ
             <ArrowRightIcon className="h-5 w-5" />
           </Link>
         </div>
@@ -104,20 +104,20 @@ export default function StudentDashboard() {
         <div className="lg:col-span-2 card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Pending Fees
+              ប្រាក់រង់ចាំបង់
             </h3>
             <Link
               to="/student/fees"
               className="text-primary-600 hover:text-primary-500 text-sm font-medium"
             >
-              View All →
+              មើលទាំងអស់ →
             </Link>
           </div>
 
           {dashboardData?.pendingFees?.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-3" />
-              <p className="text-gray-600">All fees are paid! Great job! 🎉</p>
+              <p className="text-gray-600">ការបង់ប្រាក់ទាំងអស់ត្រូវបានបញ្ចប់! ល្អណាស់! 🎉</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -136,11 +136,11 @@ export default function StudentDashboard() {
                         {fee.FeeStructure?.name}
                       </h4>
                       {new Date(fee.dueDate) < new Date() && (
-                        <span className="badge badge-danger">Overdue</span>
+                        <span className="badge badge-danger">ហួសកាលកំណត់</span>
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      Due: {formatDate(fee.dueDate)}
+                      ថ្ងៃកំណត់៖ {formatDate(fee.dueDate)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -151,7 +151,7 @@ export default function StudentDashboard() {
                       to={`/student/pay?feeId=${fee.id}`}
                       className="text-primary-600 hover:text-primary-500 text-sm font-medium"
                     >
-                      Pay Now
+                      បង់ឥឡូវនេះ
                     </Link>
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default function StudentDashboard() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Notifications
+                ការជូនដំណឹង
               </h3>
               <Link
                 to="/student/notifications"
@@ -178,7 +178,7 @@ export default function StudentDashboard() {
             <div className="space-y-3">
               {dashboardData?.notifications?.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4">
-                  No new notifications
+                  គ្មានការជូនដំណឹងថ្មីៗទេ
                 </p>
               ) : (
                 dashboardData?.notifications
@@ -211,19 +211,19 @@ export default function StudentDashboard() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Recent Payments
+                ការបង់ប្រាក់ថ្មីៗ
               </h3>
               <Link
                 to="/student/history"
                 className="text-primary-600 hover:text-primary-500 text-sm font-medium"
               >
-                View All →
+                មើលទាំងអស់ →
               </Link>
             </div>
             <div className="space-y-3">
               {dashboardData?.recentPayments?.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4">
-                  No payments yet
+                  មិនទាន់មានការបង់ប្រាក់នៅឡើយទេ
                 </p>
               ) : (
                 dashboardData?.recentPayments?.slice(0, 3).map((payment) => (
@@ -243,7 +243,7 @@ export default function StudentDashboard() {
                       <p className="text-sm font-semibold text-green-600">
                         {formatCurrency(payment.amount)}
                       </p>
-                      <span className="badge badge-success text-xs">Paid</span>
+                      <span className="badge badge-success text-xs">បានបង់</span>
                     </div>
                   </div>
                 ))
@@ -256,7 +256,7 @@ export default function StudentDashboard() {
       {/* Quick Actions */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Quick Actions
+          សកម្មភាពរហ័ស
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link
@@ -264,21 +264,21 @@ export default function StudentDashboard() {
             className="p-4 border rounded-lg text-center hover:bg-gray-50 transition-colors"
           >
             <CurrencyDollarIcon className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900">View Fees</p>
+            <p className="font-medium text-gray-900">មើលថ្លៃបង់ប្រាក់</p>
           </Link>
           <Link
             to="/student/pay"
             className="p-4 border rounded-lg text-center hover:bg-gray-50 transition-colors"
           >
             <CheckCircleIcon className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900">Make Payment</p>
+            <p className="font-medium text-gray-900">បង់ប្រាក់ឥឡូវនេះ</p>
           </Link>
           <Link
             to="/student/history"
             className="p-4 border rounded-lg text-center hover:bg-gray-50 transition-colors"
           >
             <ClockIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <p className="font-medium text-gray-900">Payment History</p>
+            <p className="font-medium text-gray-900">ប្រវត្តិបង់ប្រាក់</p>
           </Link>
           <Link
             to="/student/profile"
@@ -297,7 +297,7 @@ export default function StudentDashboard() {
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            <p className="font-medium text-gray-900">My Profile</p>
+            <p className="font-medium text-gray-900">គណនីរបស់ខ្ញុំ</p>
           </Link>
         </div>
       </div>
