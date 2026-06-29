@@ -29,36 +29,36 @@ export default function DashboardLayout() {
   const isAdmin = user?.role === 'admin' || user?.role === 'accountant';
 
   const adminNavigation = [
-    { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-    { name: 'Students', href: '/admin/students', icon: UserGroupIcon },
-    { name: 'Departments', href: '/admin/departments', icon: AcademicCapIcon },
-    { name: 'Courses', href: '/admin/courses', icon: BookOpenIcon },
+    { name: 'ផ្ទាំងគ្រប់គ្រង', href: '/admin', icon: HomeIcon },
+    { name: 'និស្សិត', href: '/admin/students', icon: UserGroupIcon },
+    { name: 'ជំនាញឯកទេស', href: '/admin/departments', icon: AcademicCapIcon },
+    { name: 'មុខវិជ្ជា', href: '/admin/courses', icon: BookOpenIcon },
     {
-      name: 'Fee Structures',
+      name: 'រចនាសម្ព័ន្ធថ្លៃសិក្សា',
       href: '/admin/fee-structures',
       icon: CurrencyDollarIcon,
     },
     {
-      name: 'Fee Assignments',
+      name: 'ការកំណត់ការបង់ថ្លៃ',
       href: '/admin/fee-assignments',
       icon: ClipboardDocumentListIcon,
     },
-    { name: 'Payments', href: '/admin/payments', icon: CreditCardIcon },
-    { name: 'Users', href: '/admin/users', icon: UserCircleIcon },
+    { name: 'ការទូទាត់', href: '/admin/payments', icon: CreditCardIcon },
+    { name: 'អ្នកប្រើប្រាស់', href: '/admin/users', icon: UserCircleIcon },
     {
-      name: 'Telegram Bot',
+      name: 'តេឡេក្រាមប៊ត',
       href: '/admin/telegram',
       icon: ChatBubbleLeftRightIcon,
     },
-    { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
-    { name: 'Settings', href: '/admin/settings', icon: CogIcon },
+    { name: 'របាយការណ៍', href: '/admin/reports', icon: ChartBarIcon },
+    { name: 'ការកំណត់', href: '/admin/settings', icon: CogIcon },
   ];
 
   const studentNavigation = [
-    { name: 'Dashboard', href: '/student', icon: HomeIcon },
-    { name: 'My Fees', href: '/student/fees', icon: CurrencyDollarIcon },
+    { name: 'ផ្ទាំងគ្រប់គ្រង', href: '/student', icon: HomeIcon },
+    { name: 'ថ្លៃសិក្សារបស់ខ្ញុំ', href: '/student/fees', icon: CurrencyDollarIcon },
     {
-      name: 'Payment History',
+      name: 'ប្រវត្តិនៃការទូទាត់',
       href: '/student/payments',
       icon: CreditCardIcon,
     },
@@ -97,19 +97,19 @@ export default function DashboardLayout() {
               <XMarkIcon className="h-6 w-6 text-white" />
             </button>
           </div>
-          <nav className="flex-1 px-4 py-4 space-y-1">
+          <nav className="flex-1 px-4 py-4 space-y-1.5">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[16px] font-semibold transition-colors ${
                   location.pathname === item.href
                     ? 'bg-primary-800 text-white'
                     : 'text-primary-100 hover:bg-primary-600'
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-[22px] w-[22px] shrink-0" />
                 {item.name}
               </Link>
             ))}
@@ -126,18 +126,18 @@ export default function DashboardLayout() {
               <span className="text-xl font-bold text-white">FeesPro</span>
             </div>
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-4 py-6 space-y-1.5">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-lg text-[16px] font-semibold transition-colors ${
                   location.pathname === item.href
                     ? 'bg-primary-800 text-white'
                     : 'text-primary-100 hover:bg-primary-600'
                 }`}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-[22px] w-[22px] shrink-0" />
                 {item.name}
               </Link>
             ))}

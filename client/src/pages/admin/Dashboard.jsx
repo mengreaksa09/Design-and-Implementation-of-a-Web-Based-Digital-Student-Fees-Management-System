@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      name: 'និស្សិតសរុប (Total Students)',
+      name: 'និស្សិតសរុប',
       value: dashboardData?.totalStudents || 0,
       icon: UsersIcon,
       color: 'bg-blue-500',
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
       changeType: 'increase',
     },
     {
-      name: 'ទឹកប្រាក់ទទួលបានសរុប (Total Collected)',
+      name: 'ទឹកប្រាក់ទទួលបានសរុប',
       value: formatCurrency(dashboardData?.totalCollected || 0),
       icon: CurrencyDollarIcon,
       color: 'bg-green-500',
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
       changeType: 'increase',
     },
     {
-      name: 'ទឹកប្រាក់រង់ចាំបង់ (Pending Fees)',
+      name: 'ទឹកប្រាក់រង់ចាំបង់',
       value: formatCurrency(dashboardData?.pendingFees || 0),
       icon: ClockIcon,
       color: 'bg-yellow-500',
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
       changeType: 'decrease',
     },
     {
-      name: 'អត្រាទទួលបាន (Collection Rate)',
+      name: 'អត្រាទទួលបាន',
       value: `${dashboardData?.collectionRate || 0}%`,
       icon: CheckCircleIcon,
       color: 'bg-primary-500',
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ផ្ទាំងគ្រប់គ្រង (Dashboard)</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ផ្ទាំងគ្រប់គ្រង</h1>
           <p className="text-gray-600">សូមស្វាគមន៍ត្រឡប់មកវិញ! នេះជាទិដ្ឋភាពទូទៅរបស់អ្នក</p>
         </div>
         <div className="flex gap-3">

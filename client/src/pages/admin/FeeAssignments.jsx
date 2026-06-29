@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, isOverdue } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../../components/ConfirmModal';
 import {
@@ -94,15 +94,15 @@ export default function FeeAssignments() {
 
       if (assigned > 0) {
         toast.success(
-          `Fee assigned to ${assigned} student(s)${failed > 0 ? `, ${failed} failed (already assigned)` : ''
+          `បានកំណត់ការបង់ថ្លៃទៅកាន់និស្សិតចំនួន ${assigned} នាក់ដោយជោគជ័យ${failed > 0 ? ` (${failed} នាក់បានបរាជ័យ ដោយសារធ្លាប់បានកំណត់រួចហើយ)` : ''
           }`
         );
       } else if (failed > 0) {
         toast.error(
-          `Failed to assign fees. ${failed} student(s) already have this fee assigned.`
+          `ការកំណត់ការបង់ថ្លៃបានបរាជ័យ។ និស្សិតចំនួន ${failed} នាក់ត្រូវបានកំណត់រួចរាល់ហើយ។`
         );
       } else {
-        toast.error('No students were assigned fees.');
+        toast.error('មិនមាននិស្សិតណាម្នាក់ត្រូវបានកំណត់ការបង់ថ្លៃឡើយ។');
       }
 
       queryClient.invalidateQueries({ queryKey: ['feeAssignments'] });
@@ -110,19 +110,19 @@ export default function FeeAssignments() {
     },
     onError: (error) => {
       console.error('Assignment error:', error.response?.data || error);
-      toast.error(error.response?.data?.message || 'Failed to assign fee');
+      toast.error(error.response?.data?.message || 'ការកំណត់ការបង់ថ្លៃបានបរាជ័យ');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/fees/assignments/${id}`),
     onSuccess: () => {
-      toast.success('Assignment removed');
+      toast.success('បានលុបការកំណត់ការបង់ថ្លៃរួចរាល់');
       queryClient.invalidateQueries({ queryKey: ['feeAssignments'] });
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.message || 'Failed to remove assignment'
+        error.response?.data?.message || 'ការលុបការកំណត់ការបង់ថ្លៃបានបរាជ័យ'
       );
     },
   });
@@ -137,19 +137,19 @@ export default function FeeAssignments() {
 
   const handleAssign = () => {
     if (!selectedFee || !dueDate) {
-      toast.error('Please select a fee and due date');
+      toast.error('សូមជ្រើសរើសប្រភេទបង់ថ្លៃ និងថ្ងៃកំណត់បង់ប្រាក់');
       return;
     }
 
     if (assignType === 'individual' && selectedStudents.length === 0) {
-      toast.error('Please select at least one student');
+      toast.error('សូមជ្រើសរើសនិស្សិតយ៉ាងតិចម្នាក់');
       return;
     }
 
     if (assignType === 'course') {
       const courseValue = document.getElementById('courseFilter')?.value;
       if (!courseValue) {
-        toast.error('Please select a course');
+        toast.error('សូមជ្រើសរើសមុខវិជ្ជា');
         return;
       }
     }
@@ -186,13 +186,13 @@ export default function FeeAssignments() {
     const totalAmount = parseFloat(assignment.totalAmount || 0);
 
     if (paidAmount >= totalAmount && totalAmount > 0) {
-      return <span className="badge badge-success">ទូទាត់រួច</span>;
+      return <span className="badge badge-success">បានទូទាត់</span>;
     } else if (paidAmount > 0) {
-      return <span className="badge badge-warning">ប៉័នមានមួយផ្នែក</span>;
-    } else if (new Date(assignment.dueDate) < new Date()) {
-      return <span className="badge badge-danger">យឺត់កំណត់</span>;
+      return <span className="badge badge-warning">បានទូទាត់មួយផ្នែក</span>;
+    } else if (isOverdue(assignment.dueDate)) {
+      return <span className="badge badge-danger">ហួសកំណត់</span>;
     } else {
-      return <span className="badge bg-gray-100 text-gray-700">កំពុងរោចំណាត់</span>;
+      return <span className="badge bg-gray-100 text-gray-700">មិនទាន់ទូទាត់</span>;
     }
   };
 
@@ -201,9 +201,9 @@ export default function FeeAssignments() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">ការចំណាត់ទឹកថ្លៃ (Fee Assignments)</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ការកំណត់ការបង់ថ្លៃ</h1>
           <p className="text-gray-600">
-            ចំណាត់ទឹកថ្លៃទៅនិស្សិតនិងតាមដានការទូទាត់
+            កំណត់ការបង់ថ្លៃសម្រាប់និស្សិត និងតាមដានការទូទាត់
           </p>
         </div>
         <button
@@ -211,14 +211,14 @@ export default function FeeAssignments() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-5 w-5" />
-          ចំណាត់ទឹកថ្លៃ
+          កំណត់ការបង់ថ្លៃ
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card bg-blue-50 border border-blue-200">
-          <p className="text-sm text-blue-600">ស្រុបចំណាត់</p>
+          <p className="text-sm text-blue-600">សរុបការកំណត់</p>
           <p className="text-2xl font-bold text-blue-900">
             {formatCurrency(
               assignments?.reduce(
@@ -229,7 +229,7 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-green-50 border border-green-200">
-          <p className="text-sm text-green-600">បានទឹកមក</p>
+          <p className="text-sm text-green-600">ទទួលបាន</p>
           <p className="text-2xl font-bold text-green-900">
             {formatCurrency(
               assignments?.reduce(
@@ -240,7 +240,7 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-yellow-50 border border-yellow-200">
-          <p className="text-sm text-yellow-600">កំពុងរោចំណាត់</p>
+          <p className="text-sm text-yellow-600">មិនទាន់ទូទាត់</p>
           <p className="text-2xl font-bold text-yellow-900">
             {formatCurrency(
               assignments?.reduce(
@@ -251,11 +251,11 @@ export default function FeeAssignments() {
           </p>
         </div>
         <div className="card bg-red-50 border border-red-200">
-          <p className="text-sm text-red-600">យឺត់កំណត់</p>
+          <p className="text-sm text-red-600">ហួសកំណត់</p>
           <p className="text-2xl font-bold text-red-900">
             {assignments?.filter(
               (a) =>
-                new Date(a.dueDate) < new Date() &&
+                isOverdue(a.dueDate) &&
                 parseFloat(a.balanceAmount || 0) > 0
             ).length || 0}
           </p>
@@ -269,13 +269,13 @@ export default function FeeAssignments() {
             <thead>
               <tr className="bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  និស្សិត
+                  ឈ្មោះនិស្សិត
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ប្រភេទទឹកថ្លៃ
+                  ប្រភេទការបង់ថ្លៃ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ចំនួនទឹក
+                  ចំនួនទឹកប្រាក់
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   បានទូទាត់
@@ -306,7 +306,7 @@ export default function FeeAssignments() {
                     colSpan="7"
                     className="px-6 py-12 text-center text-gray-500"
                   >
-                    មិនទាន់មានការចំណាត់ទឹកថ្លៃទេ
+                    មិនទាន់មានការកំណត់ការបង់ថ្លៃទេ
                   </td>
                 </tr>
               ) : (
@@ -315,11 +315,14 @@ export default function FeeAssignments() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {assignment.student?.user?.firstName}{' '}
-                          {assignment.student?.user?.lastName}
+                          {assignment.student?.user ? (
+                            `${assignment.student.user.firstName} ${assignment.student.user.lastName}`
+                          ) : (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {assignment.student?.studentId}
+                          {assignment.student?.studentId || `ID: ${assignment.studentId}`}
                         </div>
                       </div>
                     </td>
@@ -365,7 +368,7 @@ export default function FeeAssignments() {
           <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                ចំណាត់ទឹកថ្លៃ
+                កំណត់ការបង់ថ្លៃ
               </h2>
               <button
                 onClick={closeModal}
@@ -378,7 +381,7 @@ export default function FeeAssignments() {
             <div className="p-6 space-y-6">
               {/* Assignment Type */}
               <div>
-                <label className="label">ប្រភេទចំណាត់ (Assignment Type)</label>
+                <label className="label">ប្រភេទចំណាត់</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -389,7 +392,7 @@ export default function FeeAssignments() {
                       onChange={(e) => setAssignType(e.target.value)}
                       className="text-primary-600"
                     />
-                    <span>និស្សិតមួយៗមួយ</span>
+                    <span>និស្សិតម្នាក់ៗ</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -419,13 +422,14 @@ export default function FeeAssignments() {
               {/* Fee Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">រចនាសម្ព័ន្ធទឹកថ្លៃ (Fee Structure) *</label>
+                  <label className="label">រចនាសម្ព័ន្ធការបង់ថ្លៃ*</label>
                   <select
                     className="input"
                     value={selectedFee}
                     onChange={(e) => setSelectedFee(e.target.value)}
                     required
                   >
+                    <option value="">ជ្រើសរើសរចនាសម្ព័ន្ធបង់ថ្លៃ</option>
                     {feeStructures?.map((fee) => (
                       <option key={fee.id} value={fee.id}>
                         {fee.name} - {formatCurrency(fee.amount)}
@@ -434,7 +438,7 @@ export default function FeeAssignments() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">ថ្ងៃកំណត់ (Due Date) *</label>
+                  <label className="label">ថ្ងៃកំណត់​*</label>
                   <input
                     type="date"
                     className="input"
@@ -450,7 +454,7 @@ export default function FeeAssignments() {
                 <div>
                   <label className="label">ជ្រើសរើសមុខវិជ្ជា</label>
                   <select id="courseFilter" className="input" defaultValue="">
-                    <option value="" disabled>ជ្រើសរើសមុខវិជ្ជាមួយ</option>
+                    <option value="" disabled>ជ្រើសរើសមុខវិជ្ជា</option>
                     {courses?.map((course) => (
                       <option key={course.id} value={course.id}>
                         {course.name}
@@ -463,7 +467,7 @@ export default function FeeAssignments() {
               {/* Student Selection */}
               {assignType === 'individual' && (
                 <div>
-                  <label className="label">ជ្រើសរើសនិស្សិត</label>
+                  <label className="label">ជ្រើសរើសនិស្សិត </label>
                   <div className="relative mb-4">
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
@@ -528,11 +532,11 @@ export default function FeeAssignments() {
                   <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-yellow-800">
-                      កំពុងកំណាត់ទៅនិស្សិតទាំងអស់
+                      កំពុងកំណត់សម្រាប់និស្សិតទាំងអស់
                     </p>
                     <p className="text-sm text-yellow-700">
-                      នេះនឹងកំណាត់បង់ថ្លៃដែលបានជ្រើសរើសទៅនិស្សិតទាំងអស់{' '}
-                      {students?.length || 0} នាំក្នុងប្រព័ន្ធ។
+                      នេះនឹងកំណត់ការបង់ថ្លៃដែលបានជ្រើសរើសទៅនិស្សិតទាំងអស់{' '}
+                      {students?.length || 0} នាក់ក្នុងប្រព័ន្ធ។
                     </p>
                   </div>
                 </div>
@@ -548,7 +552,7 @@ export default function FeeAssignments() {
                 disabled={assignMutation.isPending}
                 className="btn-primary"
               >
-                {assignMutation.isPending ? 'កំពុងកំណាត់...' : 'កំណាត់បង់ថ្លៃ'}
+                {assignMutation.isPending ? 'កំពុងកំណត់...' : 'កំណត់ការបង់ថ្លៃ'}
               </button>
             </div>
           </div>
@@ -563,9 +567,9 @@ export default function FeeAssignments() {
           deleteMutation.mutate(confirmModal.assignmentId);
           setConfirmModal({ isOpen: false, assignmentId: null });
         }}
-        title="លុបការកំណាត់បង់ថ្លៃ"
-        message="តើអ្នកពិតជាចង់លុបការកំណាត់បង់ថ្លៃនេះមែនទេ?"
-        confirmText="លុប"
+        title="លុបការកំណត់ការបង់ថ្លៃ"
+        message="តើអ្នកពិតជាចង់លុបការកំណត់ការបង់ថ្លៃនេះមែនទេ?"
+        confirmText="Delete"
         type="danger"
       />
     </div>

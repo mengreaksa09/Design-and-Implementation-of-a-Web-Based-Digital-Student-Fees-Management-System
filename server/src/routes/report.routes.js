@@ -1,14 +1,45 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 const { auth, authorize } = require('../middleware/auth.middleware');
 const {
   generateExcelReport,
   generatePdfReport,
 } = require('../utils/export.util');
-const { parseDateRange } = require('../utils/helpers.util');
+const { parseDateRange, getTodayStr } = require('../utils/helpers.util');
 const db = require('../models');
 const { Op } = require('sequelize');
 
+// Helper to handle file export downloads directly
+const handleExport = async (req, res, reportType, payments, options) => {
+  const { format } = req.query;
+  const data = payments.map((p) => ({
+    date: new Date(p.paymentDate).toLocaleDateString(),
+    receiptNumber: p.receiptNumber || 'N/A',
+    studentId: p.student?.studentId || 'N/A',
+    studentName: p.student?.user ? `${p.student.user.firstName} ${p.student.user.lastName}` : 'N/A',
+    feeType: p.feeAssignment?.feeStructure?.name || 'N/A',
+    amount: parseFloat(p.amount || 0).toFixed(2),
+    paymentMethod: p.paymentMethod === 'cash' ? 'សាច់ប្រាក់' : p.paymentMethod === 'bank_transfer' ? 'ផ្ទេរតាមធនាគារ' : p.paymentMethod,
+    status: p.status === 'completed' ? 'បានបញ្ចប់' : p.status,
+  }));
+
+  try {
+    let result;
+    if (format === 'excel') {
+      result = await generateExcelReport(data, reportType, options);
+    } else {
+      result = await generatePdfReport(data, reportType, options);
+    }
+
+    res.sendFile(result.fullPath);
+  } catch (error) {
+    console.error('Export handling error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export report file' });
+  }
+};
+
+// GET /api/reports/dashboard
 router.get(
   '/dashboard',
   auth,
@@ -92,7 +123,7 @@ router.get(
         (await db.FeeAssignment.sum('balanceAmount', {
           where: {
             status: { [Op.in]: ['pending', 'partial', 'overdue'] },
-            dueDate: { [Op.lt]: new Date() },
+            dueDate: { [Op.lt]: getTodayStr() },
           },
         })) || 0;
 
@@ -243,7 +274,7 @@ router.get(
       const overduePayments = await db.FeeAssignment.count({
         where: {
           status: { [Op.in]: ['pending', 'partial', 'overdue'] },
-          dueDate: { [Op.lt]: new Date() },
+          dueDate: { [Op.lt]: getTodayStr() },
         },
       });
 
@@ -295,7 +326,505 @@ router.get(
   }
 );
 
-// Daily collection report
+// GET /api/reports/daily
+router.get('/daily', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { date } = req.query;
+    const reportDate = date ? new Date(date) : new Date();
+    reportDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(reportDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [reportDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['firstName', 'lastName'],
+            },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'feeStructure',
+            },
+          ],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    const totalCollected = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const transactionCount = payments.length;
+    const uniqueStudents = new Set(payments.map(p => p.studentId).filter(Boolean));
+    const studentsPaid = uniqueStudents.size;
+    const averagePayment = transactionCount > 0 ? (totalCollected / transactionCount) : 0;
+
+    const transactions = payments.map((p) => ({
+      date: p.paymentDate,
+      studentName: p.student?.user ? `${p.student.user.firstName} ${p.student.user.lastName}` : 'N/A',
+      feeType: p.feeAssignment?.feeStructure?.name || 'N/A',
+      method: p.paymentMethod,
+      amount: parseFloat(p.amount || 0),
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        totalCollected,
+        transactionCount,
+        studentsPaid,
+        averagePayment,
+        transactions,
+      },
+    });
+  } catch (error) {
+    console.error('Daily report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate daily report' });
+  }
+});
+
+// GET /api/reports/monthly
+router.get('/monthly', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const reportMonth = month ? parseInt(month) - 1 : new Date().getMonth();
+    const reportYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const startDate = new Date(reportYear, reportMonth, 1);
+    const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [startDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['firstName', 'lastName'],
+            },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'feeStructure',
+            },
+          ],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    const totalCollected = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const transactionCount = payments.length;
+    const uniqueStudents = new Set(payments.map(p => p.studentId).filter(Boolean));
+    const studentsPaid = uniqueStudents.size;
+    const averagePayment = transactionCount > 0 ? (totalCollected / transactionCount) : 0;
+
+    const transactions = payments.map((p) => ({
+      date: p.paymentDate,
+      studentName: p.student?.user ? `${p.student.user.firstName} ${p.student.user.lastName}` : 'N/A',
+      feeType: p.feeAssignment?.feeStructure?.name || 'N/A',
+      method: p.paymentMethod,
+      amount: parseFloat(p.amount || 0),
+    }));
+
+    // Group by day for the chart
+    const dailyMap = {};
+    payments.forEach((p) => {
+      const day = new Date(p.paymentDate).getDate();
+      dailyMap[day] = (dailyMap[day] || 0) + parseFloat(p.amount || 0);
+    });
+
+    const chartLabels = [];
+    const chartData = [];
+    const daysInMonth = new Date(reportYear, reportMonth + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      chartLabels.push(`ថ្ងៃទី ${day}`);
+      chartData.push(dailyMap[day] || 0);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        totalCollected,
+        transactionCount,
+        studentsPaid,
+        averagePayment,
+        chartLabels,
+        chartData,
+        transactions,
+      },
+    });
+  } catch (error) {
+    console.error('Monthly report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate monthly report' });
+  }
+});
+
+// GET /api/reports/yearly
+router.get('/yearly', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { year } = req.query;
+    const reportYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const startDate = new Date(reportYear, 0, 1);
+    const endDate = new Date(reportYear, 11, 31, 23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [startDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['firstName', 'lastName'],
+            },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'feeStructure',
+            },
+          ],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    const totalCollected = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const transactionCount = payments.length;
+    const uniqueStudents = new Set(payments.map(p => p.studentId).filter(Boolean));
+    const studentsPaid = uniqueStudents.size;
+    const averagePayment = transactionCount > 0 ? (totalCollected / transactionCount) : 0;
+
+    const transactions = payments.map((p) => ({
+      date: p.paymentDate,
+      studentName: p.student?.user ? `${p.student.user.firstName} ${p.student.user.lastName}` : 'N/A',
+      feeType: p.feeAssignment?.feeStructure?.name || 'N/A',
+      method: p.paymentMethod,
+      amount: parseFloat(p.amount || 0),
+    }));
+
+    // Group by month for the chart
+    const monthlyMap = {};
+    payments.forEach((p) => {
+      const monthIndex = new Date(p.paymentDate).getMonth();
+      monthlyMap[monthIndex] = (monthlyMap[monthIndex] || 0) + parseFloat(p.amount || 0);
+    });
+
+    const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+    const chartLabels = khmerMonths;
+    const chartData = khmerMonths.map((_, index) => monthlyMap[index] || 0);
+
+    res.json({
+      success: true,
+      data: {
+        totalCollected,
+        transactionCount,
+        studentsPaid,
+        averagePayment,
+        chartLabels,
+        chartData,
+        transactions,
+      },
+    });
+  } catch (error) {
+    console.error('Yearly report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate yearly report' });
+  }
+});
+
+// GET /api/reports/collection
+router.get('/collection', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const reportStartDate = startDate ? new Date(startDate) : new Date();
+    reportStartDate.setHours(0, 0, 0, 0);
+    const reportEndDate = endDate ? new Date(endDate) : new Date();
+    reportEndDate.setHours(23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [reportStartDate, reportEndDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['firstName', 'lastName'],
+            },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'feeStructure',
+            },
+          ],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    const totalCollected = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const transactionCount = payments.length;
+    const uniqueStudents = new Set(payments.map(p => p.studentId).filter(Boolean));
+    const studentsPaid = uniqueStudents.size;
+    const averagePayment = transactionCount > 0 ? (totalCollected / transactionCount) : 0;
+
+    const transactions = payments.map((p) => ({
+      date: p.paymentDate,
+      studentName: p.student?.user ? `${p.student.user.firstName} ${p.student.user.lastName}` : 'N/A',
+      feeType: p.feeAssignment?.feeStructure?.name || 'N/A',
+      method: p.paymentMethod,
+      amount: parseFloat(p.amount || 0),
+    }));
+
+    // Group by day for the chart
+    const dailyMap = {};
+    payments.forEach((p) => {
+      const dateString = new Date(p.paymentDate).toISOString().split('T')[0];
+      dailyMap[dateString] = (dailyMap[dateString] || 0) + parseFloat(p.amount || 0);
+    });
+
+    const chartLabels = [];
+    const chartData = [];
+    const curr = new Date(reportStartDate);
+    const end = new Date(reportEndDate);
+    while (curr <= end) {
+      const dateString = curr.toISOString().split('T')[0];
+      const d = curr.getDate();
+      const m = curr.getMonth() + 1;
+      chartLabels.push(`${d}/${m}`);
+      chartData.push(dailyMap[dateString] || 0);
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        totalCollected,
+        transactionCount,
+        studentsPaid,
+        averagePayment,
+        chartLabels,
+        chartData,
+        transactions,
+      },
+    });
+  } catch (error) {
+    console.error('Collection report error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate collection report' });
+  }
+});
+
+// GET /api/reports/daily/export
+router.get('/daily/export', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { date } = req.query;
+    const reportDate = date ? new Date(date) : new Date();
+    reportDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(reportDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [reportDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            { model: db.User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [{ model: db.FeeStructure, as: 'feeStructure' }],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    await handleExport(req, res, 'Daily Collection', payments, {
+      startDate: reportDate.toLocaleDateString(),
+      endDate: reportDate.toLocaleDateString(),
+    });
+  } catch (error) {
+    console.error('Daily export error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export daily report' });
+  }
+});
+
+// GET /api/reports/monthly/export
+router.get('/monthly/export', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const reportMonth = month ? parseInt(month) - 1 : new Date().getMonth();
+    const reportYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const startDate = new Date(reportYear, reportMonth, 1);
+    const endDate = new Date(reportYear, reportMonth + 1, 0, 23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [startDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            { model: db.User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [{ model: db.FeeStructure, as: 'feeStructure' }],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    await handleExport(req, res, 'Monthly Collection', payments, {
+      startDate: startDate.toLocaleDateString(),
+      endDate: endDate.toLocaleDateString(),
+    });
+  } catch (error) {
+    console.error('Monthly export error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export monthly report' });
+  }
+});
+
+// GET /api/reports/yearly/export
+router.get('/yearly/export', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { year } = req.query;
+    const reportYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const startDate = new Date(reportYear, 0, 1);
+    const endDate = new Date(reportYear, 11, 31, 23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [startDate, endDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            { model: db.User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [{ model: db.FeeStructure, as: 'feeStructure' }],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    await handleExport(req, res, 'Yearly Collection', payments, {
+      startDate: startDate.toLocaleDateString(),
+      endDate: endDate.toLocaleDateString(),
+    });
+  } catch (error) {
+    console.error('Yearly export error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export yearly report' });
+  }
+});
+
+// GET /api/reports/collection/export
+router.get('/collection/export', auth, authorize('admin', 'accountant'), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const reportStartDate = startDate ? new Date(startDate) : new Date();
+    reportStartDate.setHours(0, 0, 0, 0);
+    const reportEndDate = endDate ? new Date(endDate) : new Date();
+    reportEndDate.setHours(23, 59, 59, 999);
+
+    const payments = await db.Payment.findAll({
+      where: {
+        status: 'completed',
+        paymentDate: { [Op.between]: [reportStartDate, reportEndDate] },
+      },
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            { model: db.User, as: 'user', attributes: ['firstName', 'lastName'] },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [{ model: db.FeeStructure, as: 'feeStructure' }],
+        },
+      ],
+      order: [['paymentDate', 'DESC']],
+    });
+
+    await handleExport(req, res, 'Period Collection', payments, {
+      startDate: reportStartDate.toLocaleDateString(),
+      endDate: reportEndDate.toLocaleDateString(),
+    });
+  } catch (error) {
+    console.error('Collection export error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export collection report' });
+  }
+});
+
+// Daily collection report (deprecating or keeping fallback)
 router.get(
   '/daily-collection',
   auth,
@@ -372,7 +901,7 @@ router.get(
   }
 );
 
-// Monthly collection report
+// Monthly collection report (deprecating or keeping fallback)
 router.get(
   '/monthly-collection',
   auth,
@@ -617,7 +1146,7 @@ router.get(
       const defaulters = await db.FeeAssignment.findAll({
         where: {
           status: { [Op.in]: ['pending', 'partial', 'overdue'] },
-          dueDate: { [Op.lt]: new Date() },
+          dueDate: { [Op.lt]: getTodayStr() },
           balanceAmount: { [Op.gt]: 0 },
         },
         include: [
@@ -641,9 +1170,14 @@ router.get(
       });
 
       const report = defaulters.map((d) => {
-        const daysOverdue = Math.ceil(
-          (new Date() - new Date(d.dueDate)) / (1000 * 60 * 60 * 24)
-        );
+        let daysOverdue = 0;
+        if (d.dueDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const [yr, mo, dy] = d.dueDate.split('-').map(Number);
+          const due = new Date(yr, mo - 1, dy);
+          daysOverdue = Math.round((today - due) / (1000 * 60 * 60 * 24));
+        }
         return {
           studentId: d.student?.studentId,
           studentName: `${d.student?.user?.firstName} ${d.student?.user?.lastName}`,

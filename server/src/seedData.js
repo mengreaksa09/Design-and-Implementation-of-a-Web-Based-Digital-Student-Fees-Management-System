@@ -20,8 +20,8 @@ async function seedData() {
       admin = await db.User.create({
         email: 'admin@school.edu',
         password: hashedPassword,
-        firstName: 'System',
-        lastName: 'Administrator',
+        firstName: 'ប្រព័ន្ធ',
+        lastName: 'អ្នកគ្រប់គ្រង',
         role: 'admin',
         isActive: true,
         isEmailVerified: true,
@@ -35,9 +35,9 @@ async function seedData() {
     console.log('\n2. Creating fee structures...');
     const feeStructures = [
       {
-        name: 'Tuition Fee - Undergraduate',
-        description: 'Annual tuition fee for undergraduate students',
-        feeType: 'tuition',
+        name: 'ថ្លៃសិក្សា - ថ្នាក់បរិញ្ញាបត្រ',
+        description: 'ថ្លៃសិក្សាប្រចាំឆ្នាំសម្រាប់និស្សិតថ្នាក់បរិញ្ញាបត្រ',
+        feeType: 'Tuition',
         amount: 5000.0,
         currency: 'USD',
         frequency: 'year',
@@ -54,9 +54,9 @@ async function seedData() {
         isMandatory: true,
       },
       {
-        name: 'Library Fee',
-        description: 'Annual library access and services fee',
-        feeType: 'library',
+        name: 'ថ្លៃសេវាបណ្ណាល័យ',
+        description: 'ថ្លៃសេវាបណ្ណាល័យ និងការអានសៀវភៅប្រចាំឆ្នាំ',
+        feeType: 'Library',
         amount: 200.0,
         currency: 'USD',
         frequency: 'year',
@@ -67,9 +67,9 @@ async function seedData() {
         isMandatory: true,
       },
       {
-        name: 'Laboratory Fee',
-        description: 'Fee for laboratory usage and materials',
-        feeType: 'laboratory',
+        name: 'ថ្លៃសេវាពិសោធន៍',
+        description: 'ថ្លៃសេវាប្រើប្រាស់បន្ទប់ពិសោធន៍ និងសម្ភារៈពិសោធន៍',
+        feeType: 'Laboratory',
         amount: 300.0,
         currency: 'USD',
         frequency: 'semester',
@@ -85,10 +85,10 @@ async function seedData() {
         isMandatory: false,
       },
       {
-        name: 'Exam Fee',
-        description: 'Examination and assessment fee',
-        feeType: 'exam',
-        amount: 150.0,
+        name: 'ថ្លៃប្រឡង',
+        description: 'ថ្លៃរៀបចំការប្រឡង និងការវាយតម្លៃលទ្ធផល',
+        feeType: 'Exam',
+        amount: 100.0,
         currency: 'USD',
         frequency: 'semester',
         academicYear: '2025-2026',
@@ -98,9 +98,9 @@ async function seedData() {
         isMandatory: true,
       },
       {
-        name: 'Sports Fee',
-        description: 'Sports facilities and activities fee',
-        feeType: 'sports',
+        name: 'ថ្លៃសកម្មភាពកីឡា',
+        description: 'ថ្លៃសេវាប្រើប្រាស់ទីលានកីឡា និងសកម្មភាពកីឡាផ្សេងៗ',
+        feeType: 'Sports',
         amount: 100.0,
         currency: 'USD',
         frequency: 'year',
@@ -111,10 +111,10 @@ async function seedData() {
         isMandatory: false,
       },
       {
-        name: 'Transport Fee',
-        description: 'Monthly transport service fee',
-        feeType: 'transport',
-        amount: 50.0,
+        name: 'ថ្លៃសេវាដឹកជញ្ជូន',
+        description: 'ថ្លៃសេវាឡានក្រុងដឹកជញ្ជូនប្រចាំខែ',
+        feeType: 'Transport',
+        amount: 75.0,
         currency: 'USD',
         frequency: 'monthly',
         academicYear: '2025-2026',
@@ -150,10 +150,10 @@ async function seedData() {
 
       // Create student user account
       const studentUser = await db.User.create({
-        email: 'john.doe@student.edu',
+        email: 'sok.chan@student.edu',
         password: hashedPassword,
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: 'ចាន់',
+        lastName: 'សុខ',
         role: 'student',
         isActive: true,
         isEmailVerified: true,
@@ -163,21 +163,22 @@ async function seedData() {
       student = await db.Student.create({
         studentId: 'STU2025001',
         userId: studentUser.id,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@student.edu',
+        firstName: 'ចាន់',
+        lastName: 'សុខ',
+        email: 'sok.chan@student.edu',
         gender: 'male',
         dateOfBirth: '2000-01-15',
-        nationality: 'United States',
-        address: '123 Student Street, University City',
-        phone: '+1234567890',
-        guardianName: 'Jane Doe',
-        guardianPhone: '+1234567891',
-        guardianRelationship: 'Mother',
+        nationality: 'កម្ពុជា',
+        address: 'ផ្ទះលេខ ១២ ផ្លូវសហព័ន្ធរុស្ស៊ី សង្កាត់ទឹកថ្លា ខណ្ឌសែនសុខ ភ្នំពេញ',
+        phone: '012345678',
+        guardianName: 'សុខ ជា',
+        guardianPhone: '098765432',
+        guardianRelationship: 'ម្តាយ',
         studyLevel: 'undergraduate',
         class: 'Sophomore',
         semester: 'Spring 2025',
-        department: 'Computer Science',
+        department: 'វិទ្យាសាស្ត្រកុំព្យូទ័រ',
+        course: 'សេចក្តីផ្តើមនៃកម្មវិធីកុំព្យូទ័រ',
         enrollmentDate: '2023-09-01',
         status: 'active',
       });
@@ -194,7 +195,7 @@ async function seedData() {
     console.log('  Email: admin@school.edu');
     console.log('  Password: admin123');
     console.log('\nStudent:');
-    console.log('  Email: john.doe@student.edu');
+    console.log('  Email: sok.chan@student.edu');
     console.log('  Password: student123');
     console.log('=================================\n');
 

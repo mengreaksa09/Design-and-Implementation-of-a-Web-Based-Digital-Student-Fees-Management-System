@@ -35,10 +35,34 @@ export default function UserManagement() {
 
   const queryClient = useQueryClient();
 
+  // Format phone number: +855 XX XXX XXX XXX
+  const formatPhoneNumber = (value) => {
+    if (!value || value.length === 0) {
+      return '+855 ';
+    }
+    let cleaned = value.replace(/\s/g, '');
+    if (!cleaned.startsWith('+855')) {
+      cleaned = '+855' + cleaned.replace(/^\+?\d{0,3}/, '');
+    }
+    const prefix = '+855';
+    const digits = cleaned.slice(4);
+    if (digits.length === 0) {
+      return prefix + ' ';
+    }
+    let formatted = prefix + ' ';
+    for (let i = 0; i < digits.length; i++) {
+      if (i === 2 || i === 5 || i === 8) {
+        formatted += ' ';
+      }
+      formatted += digits[i];
+    }
+    return formatted;
+  };
+
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await api.get('/users');
+      const response = await api.get('/users?limit=1000');
       return response.data.data;
     },
   });
@@ -46,35 +70,35 @@ export default function UserManagement() {
   const createMutation = useMutation({
     mutationFn: (data) => api.post('/users', data),
     onSuccess: () => {
-      toast.success('User created successfully');
+      toast.success('អ្នកប្រើប្រាស់ត្រូវបានបង្កើតដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       closeModal();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to create user');
+      toast.error(error.response?.data?.message || 'ការបង្កើតអ្នកប្រើប្រាស់បានបរាជ័យ');
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/users/${id}`, data),
     onSuccess: () => {
-      toast.success('User updated successfully');
+      toast.success('អ្នកប្រើប្រាស់ត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['users'] });
       closeModal();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update user');
+      toast.error(error.response?.data?.message || 'ការធ្វើបច្ចុប្បន្នភាពអ្នកប្រើប្រាស់បានបរាជ័យ');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/users/${id}`),
     onSuccess: () => {
-      toast.success('User deleted successfully');
+      toast.success('អ្នកប្រើប្រាស់ត្រូវបានលុបដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete user');
+      toast.error(error.response?.data?.message || 'ការលុបអ្នកប្រើប្រាស់បានបរាជ័យ');
     },
   });
 
@@ -139,13 +163,19 @@ export default function UserManagement() {
       student: 'bg-green-100 text-green-700',
       parent: 'bg-orange-100 text-orange-700',
     };
+    const labels = {
+      admin: 'អ្នកគ្រប់គ្រង',
+      accountant: 'គណនេយ្យករ',
+      student: 'និស្សិត',
+      parent: 'អាណាព្យាបាល',
+    };
     return (
       <span
         className={`px-2 py-1 rounded-full text-xs font-medium ${
           styles[role] || 'bg-gray-100 text-gray-700'
         }`}
       >
-        {role}
+        {labels[role] || role}
       </span>
     );
   };
@@ -155,10 +185,9 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ការគ្រប់គ្រងអ្នកប្រើប្រាស់</h1>
           <p className="text-gray-600">
-            Manage admin and accountant users (Students managed via Telegram
-            Bot)
+            គ្រប់គ្រងអ្នកប្រើប្រាស់ជាអ្នកគ្រប់គ្រង និងគណនេយ្យករ (និស្សិតត្រូវបានគ្រប់គ្រងតាមរយៈ Telegram Bot)
           </p>
         </div>
         <button
@@ -166,76 +195,82 @@ export default function UserManagement() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-5 w-5" />
-          Add User
+          បន្ថែមអ្នកប្រើប្រាស់
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
-          <p className="text-sm text-gray-600">Total Users</p>
+          <p className="text-sm text-gray-600">អ្នកប្រើប្រាស់សរុប</p>
           <p className="text-2xl font-bold text-gray-900">
-            {users?.filter((u) => u.role !== 'student').length || 0}
+            {users?.filter((u) => u.role !== 'student' && u.isActive).length || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Admins</p>
+          <p className="text-sm text-gray-600">អ្នកគ្រប់គ្រង</p>
           <p className="text-2xl font-bold text-purple-600">
-            {users?.filter((u) => u.role === 'admin').length || 0}
+            {users?.filter((u) => u.role === 'admin' && u.isActive).length || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Accountants</p>
+          <p className="text-sm text-gray-600">គណនេយ្យករ</p>
           <p className="text-2xl font-bold text-blue-600">
-            {users?.filter((u) => u.role === 'accountant').length || 0}
+            {users?.filter((u) => u.role === 'accountant' && u.isActive).length || 0}
           </p>
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Last Login
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    </div>
-                  </td>
+      {/* Users Table / Empty State */}
+      {isLoading ? (
+        <div className="card p-12 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      ) : !users || users.filter((user) => user.role !== 'student' && user.isActive).length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-purple-50 p-4 rounded-full text-purple-500 mb-4">
+            <PlusIcon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            មិនទាន់មានអ្នកប្រើប្រាស់ទេ
+          </h3>
+          <p className="text-gray-500 max-w-sm mb-4">
+            សូមចុចប៊ូតុងខាងក្រោម ឬប៊ូតុងខាងលើ ដើម្បីបន្ថែមអ្នកប្រើប្រាស់ថ្មី។
+          </p>
+          <button
+            onClick={() => openModal()}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusIcon className="h-5 w-5" />
+            បន្ថែមអ្នកប្រើប្រាស់
+          </button>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    អ្នកប្រើប្រាស់
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    តួនាទី
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ស្ថានភាព
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ការចូលប្រព័ន្ធចុងក្រោយ
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    សកម្មភាព
+                  </th>
                 </tr>
-              ) : users?.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    No users found
-                  </td>
-                </tr>
-              ) : (
-                users
-                  ?.filter((user) => user.role !== 'student')
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {users
+                  ?.filter((user) => user.role !== 'student' && user.isActive)
                   .map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -265,25 +300,25 @@ export default function UserManagement() {
                             user.isActive ? 'badge-success' : 'badge-danger'
                           }`}
                         >
-                          {user.isActive ? 'Active' : 'Inactive'}
+                          {user.isActive ? 'សកម្ម' : 'អសកម្ម'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.lastLogin ? formatDate(user.lastLogin) : 'Never'}
+                        {user.lastLogin ? formatDate(user.lastLogin) : 'មិនដែលចូល'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => setViewingUser(user)}
                             className="p-1 text-gray-400 hover:text-primary-600"
-                            title="View"
+                            title="មើល"
                           >
                             <EyeIcon className="h-5 w-5" />
                           </button>
                           <button
                             onClick={() => openModal(user)}
                             className="p-1 text-gray-400 hover:text-blue-600"
-                            title="Edit"
+                            title="កែសម្រួល"
                           >
                             <PencilSquareIcon className="h-5 w-5" />
                           </button>
@@ -295,19 +330,19 @@ export default function UserManagement() {
                               )
                             }
                             className="p-1 text-gray-400 hover:text-red-600"
-                            title="Delete"
+                            title="លុប"
                           >
                             <TrashIcon className="h-5 w-5" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))
-              )}
-            </tbody>
-          </table>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* User Modal */}
       {showModal && (
@@ -315,7 +350,7 @@ export default function UserManagement() {
           <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                {editingUser ? 'Edit User' : 'Add User'}
+                {editingUser ? 'កែសម្រួលអ្នកប្រើប្រាស់' : 'បន្ថែមអ្នកប្រើប្រាស់'}
               </h2>
               <button
                 onClick={closeModal}
@@ -328,7 +363,7 @@ export default function UserManagement() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">First Name *</label>
+                  <label className="label">នាមខ្លួន *</label>
                   <input
                     type="text"
                     className="input"
@@ -340,7 +375,7 @@ export default function UserManagement() {
                   />
                 </div>
                 <div>
-                  <label className="label">Last Name *</label>
+                  <label className="label">នាមត្រកូល *</label>
                   <input
                     type="text"
                     className="input"
@@ -354,7 +389,7 @@ export default function UserManagement() {
               </div>
 
               <div>
-                <label className="label">Email *</label>
+                <label className="label">អ៊ីមែល *</label>
                 <input
                   type="email"
                   className="input"
@@ -368,7 +403,7 @@ export default function UserManagement() {
 
               <div>
                 <label className="label">
-                  Password {editingUser ? '(leave blank to keep current)' : '*'}
+                  លេខសម្ងាត់ {editingUser ? '(ទុកទទេដើម្បីរក្សាលេខសម្ងាត់បច្ចុប្បន្ន)' : '*'}
                 </label>
                 <div className="relative">
                   <input
@@ -395,7 +430,7 @@ export default function UserManagement() {
               </div>
 
               <div>
-                <label className="label">Role *</label>
+                <label className="label">តួនាទី *</label>
                 <select
                   className="input"
                   value={formData.role}
@@ -404,20 +439,27 @@ export default function UserManagement() {
                   }
                   required
                 >
-                  <option value="accountant">Accountant</option>
-                  <option value="admin">Admin</option>
+                  <option value="accountant">គណនេយ្យករ</option>
+                  <option value="admin">អ្នកគ្រប់គ្រង</option>
                 </select>
               </div>
 
               <div>
-                <label className="label">Phone</label>
+                <label className="label">លេខទូរស័ព្ទ</label>
                 <input
                   type="tel"
                   className="input"
                   value={formData.phone}
                   onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                    setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })
                   }
+                  onFocus={(e) => {
+                    if (!e.target.value) {
+                      setFormData({ ...formData, phone: '+855 ' });
+                    }
+                  }}
+                  placeholder="+855 12 345 678"
+                  maxLength={20}
                 />
               </div>
 
@@ -430,7 +472,7 @@ export default function UserManagement() {
                   }
                   className="h-4 w-4 text-primary-600 rounded"
                 />
-                <span>Active user</span>
+                <span>គណនីសកម្ម</span>
               </label>
 
               <div className="flex gap-3 pt-4">
@@ -439,7 +481,7 @@ export default function UserManagement() {
                   onClick={closeModal}
                   className="flex-1 btn-secondary"
                 >
-                  Cancel
+                  បោះបង់
                 </button>
                 <button
                   type="submit"
@@ -449,10 +491,10 @@ export default function UserManagement() {
                   className="flex-1 btn-primary"
                 >
                   {createMutation.isPending || updateMutation.isPending
-                    ? 'Saving...'
+                    ? 'កំពុងរក្សាទុក...'
                     : editingUser
-                    ? 'Update'
-                    : 'Create'}
+                    ? 'ធ្វើបច្ចុប្បន្នភាព'
+                    : 'បង្កើត'}
                 </button>
               </div>
             </form>
@@ -467,9 +509,10 @@ export default function UserManagement() {
           setConfirmModal({ isOpen: false, userId: null, userName: '' })
         }
         onConfirm={confirmDelete}
-        title="Delete User"
-        message={`Are you sure you want to delete "${confirmModal.userName}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title="លុបអ្នកប្រើប្រាស់"
+        message={`តើអ្នកពិតជាចង់លុបអ្នកប្រើប្រាស់ "${confirmModal.userName}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានឡើយ។`}
+        confirmText="លុប"
+        cancelText="បោះបង់"
         type="danger"
       />
 
@@ -479,7 +522,7 @@ export default function UserManagement() {
           <div className="bg-white rounded-xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                User Details
+                ព័ត៌មានលម្អិតរបស់អ្នកប្រើប្រាស់
               </h2>
               <button
                 onClick={() => setViewingUser(null)}
@@ -507,13 +550,13 @@ export default function UserManagement() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Role
+                    តួនាទី
                   </label>
                   <p className="mt-1">{getRoleBadge(viewingUser.role)}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Status
+                    ស្ថានភាព
                   </label>
                   <p className="mt-1">
                     <span
@@ -521,13 +564,13 @@ export default function UserManagement() {
                         viewingUser.isActive ? 'badge-success' : 'badge-danger'
                       }`}
                     >
-                      {viewingUser.isActive ? 'Active' : 'Inactive'}
+                      {viewingUser.isActive ? 'សកម្ម' : 'អសកម្ម'}
                     </span>
                   </p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Phone
+                    លេខទូរស័ព្ទ
                   </label>
                   <p className="mt-1 text-gray-900">
                     {viewingUser.phone || 'N/A'}
@@ -535,17 +578,17 @@ export default function UserManagement() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Last Login
+                    ការចូលប្រព័ន្ធចុងក្រោយ
                   </label>
                   <p className="mt-1 text-gray-900">
                     {viewingUser.lastLogin
                       ? formatDate(viewingUser.lastLogin)
-                      : 'Never'}
+                      : 'មិនដែលចូល'}
                   </p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Created
+                    បានបង្កើតកាលពី
                   </label>
                   <p className="mt-1 text-gray-900">
                     {formatDate(viewingUser.createdAt)}
@@ -553,7 +596,7 @@ export default function UserManagement() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
-                    Email Verified
+                    ការផ្ទៀងផ្ទាត់អ៊ីមែល
                   </label>
                   <p className="mt-1">
                     <span
@@ -563,7 +606,7 @@ export default function UserManagement() {
                           : 'badge-warning'
                       }`}
                     >
-                      {viewingUser.isEmailVerified ? 'Verified' : 'Pending'}
+                      {viewingUser.isEmailVerified ? 'បានផ្ទៀងផ្ទាត់' : 'កំពុងរង់ចាំ'}
                     </span>
                   </p>
                 </div>
@@ -574,7 +617,7 @@ export default function UserManagement() {
                 onClick={() => setViewingUser(null)}
                 className="btn-secondary"
               >
-                Close
+                បិទ
               </button>
               <button
                 onClick={() => {
@@ -583,7 +626,7 @@ export default function UserManagement() {
                 }}
                 className="btn-primary"
               >
-                Edit User
+                កែសម្រួលអ្នកប្រើប្រាស់
               </button>
             </div>
           </div>

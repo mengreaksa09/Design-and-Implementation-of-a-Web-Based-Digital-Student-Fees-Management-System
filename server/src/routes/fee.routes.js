@@ -8,6 +8,7 @@ const {
   paginate,
   buildPaginationResponse,
   calculateLateFee,
+  getTodayStr,
 } = require('../utils/helpers.util');
 const db = require('../models');
 const { Op } = require('sequelize');
@@ -657,7 +658,7 @@ router.get('/summary/:studentId', auth, async (req, res) => {
       if (
         assignment.status === 'overdue' ||
         (assignment.status !== 'paid' &&
-          new Date(assignment.dueDate) < new Date())
+          assignment.dueDate && assignment.dueDate < getTodayStr())
       ) {
         summary.totalOverdue += parseFloat(assignment.balanceAmount);
         summary.byStatus.overdue++;
@@ -697,7 +698,7 @@ router.post('/update-late-fees', auth, authorize('admin'), async (req, res) => {
     const overdueAssignments = await db.FeeAssignment.findAll({
       where: {
         status: { [Op.in]: ['pending', 'partial'] },
-        dueDate: { [Op.lt]: new Date() },
+        dueDate: { [Op.lt]: getTodayStr() },
       },
       include: [
         {

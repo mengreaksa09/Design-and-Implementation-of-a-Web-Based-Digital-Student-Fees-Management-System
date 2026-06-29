@@ -9,6 +9,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   XMarkIcon,
+  CreditCardIcon,
 } from '@heroicons/react/24/outline';
 
 export default function FeeStructures() {
@@ -228,11 +229,19 @@ export default function FeeStructures() {
       annually: 'bg-green-100 text-green-700',
       year: 'bg-teal-100 text-teal-700',
     };
+    const labels = {
+      'one-time': 'ម្តងគត់',
+      monthly: 'ប្រចាំខែ',
+      quarterly: 'ប្រចាំត្រីមាស',
+      semester: 'ប្រចាំឆមាស',
+      annually: 'ប្រចាំឆ្នាំ',
+      year: 'ប្រចាំឆ្នាំ',
+    };
     return (
       <span
         className={`px-2 py-1 rounded-full text-xs font-medium ${colors[frequency]}`}
       >
-        {frequency.charAt(0).toUpperCase() + frequency.slice(1)}
+        {labels[frequency] || frequency}
       </span>
     );
   };
@@ -242,9 +251,9 @@ export default function FeeStructures() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">រចនាសម្ព័ន្ធបង់ថ្លៃ (Fee Structures)</h1>
+          <h1 className="text-2xl font-bold text-gray-900">រចនាសម្ព័ន្ធការបង់ថ្លៃ</h1>
           <p className="text-gray-600">
-            កំណត់ និងគ្រប់គ្រងប្រភេទបង់ថ្លៃសម្រាប់ស្ថាប័នរបស់អ្នក
+            កំណត់ និងគ្រប់គ្រងប្រភេទនៃបង់ថ្លៃសម្រាប់ស្ថាប័ន
           </p>
         </div>
         <button
@@ -262,13 +271,22 @@ export default function FeeStructures() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       ) : fees?.length === 0 ? (
-        <div className="card text-center py-12">
-          <p className="text-gray-500">មិនទាន់មានរចនាសម្ព័ន្ធបង់ថ្លៃទេ</p>
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-primary-50 p-4 rounded-full text-primary-500 mb-4">
+            <CreditCardIcon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            មិនទាន់មានរចនាសម្ព័ន្ធបង់ថ្លៃទេ
+          </h3>
+          <p className="text-gray-500 max-w-sm mb-4">
+            សូមចុចប៊ូតុងខាងក្រោម ឬប៊ូតុងខាងលើ ដើម្បីបង្កើតរចនាសម្ព័ន្ធបង់ថ្លៃដំបូងសម្រាប់សាលារបស់អ្នក។
+          </p>
           <button
             onClick={() => openModal()}
-            className="mt-4 text-primary-600 hover:text-primary-500 font-medium"
+            className="btn-primary flex items-center gap-2"
           >
-            បង្កើតរចនាសម្ព័ន្ធថ្លៃដំបូងរបស់អ្នក →
+            <PlusIcon className="h-5 w-5" />
+            បន្ថែមរចនាសម្ព័ន្ធបង់ថ្លៃ
           </button>
         </div>
       ) : (
@@ -312,7 +330,7 @@ export default function FeeStructures() {
               <div className="space-y-2 text-sm">
                 {fee.lateFeeValue > 0 && (
                   <div className="flex justify-between text-gray-600">
-                    <span>ថ្លៃយឺត់:</span>
+                    <span>ថ្លៃយឺត:</span>
                     <span>
                       {fee.lateFeeType === 'percentage'
                         ? `${fee.lateFeeValue}%`
@@ -322,7 +340,7 @@ export default function FeeStructures() {
                 )}
                 {fee.gracePeriod > 0 && (
                   <div className="flex justify-between text-gray-600">
-                    <span>រយៈពេលរ៉ោយរ៉ោ:</span>
+                    <span>រយៈពេលអនុគ្រោះ (Grace Period):</span>
                     <span>{fee.gracePeriod} days</span>
                   </div>
                 )}
@@ -363,7 +381,7 @@ export default function FeeStructures() {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="label">ឈ្មោះបង់ថ្លៃ (Fee Name) *</label>
+                  <label className="label">ឈ្មោះបង់ថ្លៃ *</label>
                   <input
                     type="text"
                     className="input"
@@ -378,7 +396,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ប្រភេទបង់ថ្លៃ (Fee Type) *</label>
+                  <label className="label">ប្រភេទបង់ថ្លៃ *</label>
                   <input
                     type="text"
                     className="input"
@@ -392,7 +410,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ចំនួនបង់ថ្លៃ (Amount USD) *</label>
+                  <label className="label">តម្លៃបង់ថ្លៃ *</label>
                   <input
                     type="text"
                     className="input"
@@ -411,7 +429,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ប្រហែល (Frequency) *</label>
+                  <label className="label">ភាពញឹកញាប់ *</label>
                   <select
                     className="input"
                     value={formData.frequency}
@@ -420,17 +438,17 @@ export default function FeeStructures() {
                     }
                     required
                   >
-                    <option value="one-time">One-time</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="semester">Semester</option>
-                    <option value="annually">Annually</option>
-                    <option value="year">Year</option>
+                    <option value="one-time">ម្តងគត់</option>
+                    <option value="monthly">ប្រចាំខែ</option>
+                    <option value="quarterly">ប្រចាំត្រីមាស</option>
+                    <option value="semester">ប្រចាំឆមាស</option>
+                    <option value="annually">ប្រចាំឆ្នាំ</option>
+                    <option value="year">ប្រចាំឆ្នាំ</option>
                   </select>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="label">ការពិពណ៌នា (Description)</label>
+                  <label className="label">ការពិពណ៌នា</label>
                   <textarea
                     rows={2}
                     className="input"
@@ -443,7 +461,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ថ្ងៃកំណត់នៃខែ (Due Day of Month)</label>
+                  <label className="label">ថ្ងៃកំណត់នៃខែ</label>
                   <input
                     type="number"
                     min="1"
@@ -458,7 +476,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">រយៈពេលរ៉ោយរ៉ោ (ថ្ងៃ) (Grace Period days)</label>
+                  <label className="label">រយៈពេលអនុគ្រោះ (ថ្ងៃ)</label>
                   <input
                     type="number"
                     min="0"
@@ -472,7 +490,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ប្រភេទបង់ថ្លៃយឺត (Late Fee Type)</label>
+                  <label className="label">ប្រភេទបង់ថ្លៃយឺត</label>
                   <select
                     className="input"
                     value={formData.lateFeeType}
@@ -480,8 +498,8 @@ export default function FeeStructures() {
                       setFormData({ ...formData, lateFeeType: e.target.value })
                     }
                   >
-                    <option value="fixed">Fixed Amount</option>
-                    <option value="percentage">Percentage</option>
+                    <option value="fixed">ចំនួនថេរ</option>
+                    <option value="percentage">ភាគរយ</option>
                   </select>
                 </div>
 
@@ -503,7 +521,7 @@ export default function FeeStructures() {
                 </div>
 
                 <div>
-                  <label className="label">ជំនាញឯកទេស (Department)</label>
+                  <label className="label">ជំនាញឯកទេស</label>
                   <select
                     className="input"
                     value={formData.department}
@@ -563,7 +581,7 @@ export default function FeeStructures() {
           setConfirmModal({ isOpen: false, feeId: null, feeName: '' })
         }
         onConfirm={confirmDelete}
-        title="លុបរចនាសម្ព័ន្ធទឹកថ្លៃ"
+        title="លុបរចនាសម្ព័ន្ធបង់ថ្លៃ"
         message={`តើអ្នកពិតជាចង់លុប "${confirmModal.feeName}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`}
         confirmText="លុប"
         type="danger"

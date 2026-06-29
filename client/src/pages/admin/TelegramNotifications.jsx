@@ -8,13 +8,15 @@ import {
   BellAlertIcon,
   LinkIcon,
   XMarkIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 
 export default function TelegramNotifications() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [message, setMessage] = useState('');
-  const [selectAll, setSelectAll] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -26,6 +28,28 @@ export default function TelegramNotifications() {
       return response.data.data;
     },
   });
+
+  // Dynamically extract unique courses from linked students
+  const uniqueCourses = [
+    ...new Set(linkedStudents?.map((s) => s.course).filter(Boolean)),
+  ];
+
+  // Filter students in memory by search term (name/ID) and course
+  const filteredStudents = linkedStudents?.filter((student) => {
+    const fullName = `${student.user?.firstName || ''} ${student.user?.lastName || ''}`.toLowerCase();
+    const searchMatch =
+      fullName.includes(searchTerm.toLowerCase()) ||
+      student.studentId?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const courseMatch = !courseFilter || student.course === courseFilter;
+
+    return searchMatch && courseMatch;
+  }) || [];
+
+  // Computed Select-All State for filtered list
+  const isAllFilteredSelected =
+    filteredStudents.length > 0 &&
+    filteredStudents.every((s) => selectedStudents.includes(s.id));
 
   // Send alert mutation
   const sendAlertMutation = useMutation({
@@ -43,15 +67,14 @@ export default function TelegramNotifications() {
       }
     },
     onSuccess: (response) => {
-      toast.success(response.data.message || 'Notifications sent successfully');
+      toast.success(response.data.message || 'បានផ្ញើការជូនដំណឹងដោយជោគជ័យ');
       setShowSendModal(false);
       setMessage('');
       setSelectedStudents([]);
-      setSelectAll(false);
     },
     onError: (error) => {
       toast.error(
-        error.response?.data?.message || 'Failed to send notifications'
+        error.response?.data?.message || 'ការផ្ញើការជូនដំណឹងបានបរាជ័យ'
       );
     },
   });
@@ -61,27 +84,28 @@ export default function TelegramNotifications() {
     mutationFn: (studentId) =>
       api.post(`/telegram/unlink-student/${studentId}`),
     onSuccess: () => {
-      toast.success('Student unlinked successfully');
+      toast.success('បានផ្តាច់ការភ្ជាប់របស់និស្សិតដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['telegram-linked-students'] });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to unlink student');
+      toast.error(error.response?.data?.message || 'ការផ្តាច់ការភ្ជាប់របស់និស្សិតបានបរាជ័យ');
     },
   });
 
   const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedStudents([]);
+    const filteredIds = filteredStudents.map((s) => s.id);
+    if (isAllFilteredSelected) {
+      // Uncheck only the filtered students
+      setSelectedStudents(selectedStudents.filter((id) => !filteredIds.includes(id)));
     } else {
-      setSelectedStudents(linkedStudents?.map((s) => s.id) || []);
+      // Check all filtered students
+      setSelectedStudents([...new Set([...selectedStudents, ...filteredIds])]);
     }
-    setSelectAll(!selectAll);
   };
 
   const handleStudentSelect = (studentId) => {
     if (selectedStudents.includes(studentId)) {
       setSelectedStudents(selectedStudents.filter((id) => id !== studentId));
-      setSelectAll(false);
     } else {
       setSelectedStudents([...selectedStudents, studentId]);
     }
@@ -89,11 +113,11 @@ export default function TelegramNotifications() {
 
   const handleSendNotification = () => {
     if (selectedStudents.length === 0) {
-      toast.error('Please select at least one student');
+      toast.error('សូមជ្រើសរើសនិស្សិតយ៉ាងតិចម្នាក់');
       return;
     }
     if (!message.trim()) {
-      toast.error('Please enter a message');
+      toast.error('សូមបញ្ចូលសារ');
       return;
     }
 
@@ -109,19 +133,19 @@ export default function TelegramNotifications() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Telegram Notifications
+            ការជូនដំណឹងតាម Telegram
           </h1>
           <p className="text-gray-600">
-            Send fee alerts and notifications to students via Telegram
+            ផ្ញើការជូនដំណឹងពីថ្លៃសិក្សា និងសារផ្សេងៗទៅកាន់និស្សិតតាមរយៈ Telegram
           </p>
         </div>
         <button
           onClick={() => setShowSendModal(true)}
-          disabled={!linkedStudents || linkedStudents.length === 0}
-          className="btn-primary flex items-center gap-2"
+          disabled={selectedStudents.length === 0}
+          className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <PaperAirplaneIcon className="h-5 w-5" />
-          Send Notification
+          ផ្ញើការជូនដំណឹង
         </button>
       </div>
 
@@ -133,7 +157,7 @@ export default function TelegramNotifications() {
               <LinkIcon className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Linked Students</p>
+              <p className="text-sm text-gray-600">និស្សិតដែលបានភ្ជាប់</p>
               <p className="text-2xl font-bold text-gray-900">
                 {linkedStudents?.length || 0}
               </p>
@@ -146,7 +170,7 @@ export default function TelegramNotifications() {
               <UserGroupIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Selected</p>
+              <p className="text-sm text-gray-600">បានជ្រើសរើស</p>
               <p className="text-2xl font-bold text-gray-900">
                 {selectedStudents.length}
               </p>
@@ -159,75 +183,106 @@ export default function TelegramNotifications() {
               <BellAlertIcon className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Bot Status</p>
-              <p className="text-lg font-bold text-green-600">Active</p>
+              <p className="text-sm text-gray-600">ស្ថានភាព Bot</p>
+              <p className="text-lg font-bold text-green-600">សកម្ម</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Linked Students Table */}
-      <div className="card overflow-hidden">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Linked Students
-          </h2>
-          {linkedStudents && linkedStudents.length > 0 && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="h-4 w-4 text-primary-600 rounded"
-              />
-              <span className="text-sm text-gray-600">Select All</span>
-            </label>
-          )}
+      {/* Filters Section */}
+      <div className="card">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="ស្វែងរកតាមឈ្មោះ ឬអត្តសញ្ញាណនិស្សិត..."
+              className="input pl-10 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="input w-auto min-w-[200px]"
+            value={courseFilter}
+            onChange={(e) => setCourseFilter(e.target.value)}
+          >
+            <option value="">វគ្គសិក្សាទាំងអស់</option>
+            {uniqueCourses.map((course) => (
+              <option key={course} value={course}>
+                {course}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Select
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Class
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Telegram Username
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    </div>
-                  </td>
+      </div>
+
+      {/* Linked Students Table / Empty State */}
+      {isLoading ? (
+        <div className="card p-12 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      ) : !filteredStudents || filteredStudents.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-blue-50 p-4 rounded-full text-blue-500 mb-4">
+            <PaperAirplaneIcon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            {searchTerm || courseFilter
+              ? 'រកមិនឃើញនិស្សិតស្របតាមការស្វែងរកទេ'
+              : 'មិនទាន់មាននិស្សិតភ្ជាប់ជាមួយ Telegram នៅឡើយទេ'}
+          </h3>
+          <p className="text-gray-500 max-w-sm">
+            {searchTerm || courseFilter
+              ? 'សូមព្យាយាមផ្លាស់ប្តូរពាក្យគន្លឹះស្វែងរក ឬប្រភេទចម្រោះជំនាញផ្សេងទៀត។'
+              : 'និស្សិតត្រូវភ្ជាប់គណនី Telegram របស់ពួកគេជាមុនសិន ដើម្បីអាចទទួលការជូនដំណឹងពីប្រព័ន្ធ។'}
+          </p>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
+              និស្សិតដែលបានភ្ជាប់
+            </h2>
+            {filteredStudents && filteredStudents.length > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAllFilteredSelected}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 text-primary-600 rounded"
+                />
+                <span className="text-sm text-gray-600">ជ្រើសរើសទាំងអស់</span>
+              </label>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ជ្រើសរើស
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ឈ្មោះនិស្សិត
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    អត្តសញ្ញាណនិស្សិត
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    វគ្គសិក្សា
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ឈ្មោះអ្នកប្រើប្រាស់ Telegram
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    សកម្មភាព
+                  </th>
                 </tr>
-              ) : linkedStudents?.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    No students linked to Telegram yet
-                  </td>
-                </tr>
-              ) : (
-                linkedStudents?.map((student) => (
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -259,7 +314,7 @@ export default function TelegramNotifications() {
                       {student.studentId}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.class || 'N/A'}
+                      {student.course || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       @{student.telegramUsername || 'N/A'}
@@ -269,24 +324,25 @@ export default function TelegramNotifications() {
                         onClick={() => unlinkMutation.mutate(student.id)}
                         className="text-red-600 hover:text-red-900 text-sm"
                       >
-                        Unlink
+                        ផ្តាច់ការភ្ជាប់
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Send Notification Modal */}
       {showSendModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4" style={{ margin: 0 }}>
+          <div className="bg-white rounded-xl w-full max-w-2xl shadow-2xl">
+            {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                Send Telegram Notification
+                ផ្ញើការជូនដំណឹងតាម Telegram
               </h2>
               <button
                 onClick={() => setShowSendModal(false)}
@@ -296,55 +352,54 @@ export default function TelegramNotifications() {
               </button>
             </div>
 
+            {/* Modal Body */}
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Sending to <strong>{selectedStudents.length}</strong>{' '}
-                  student(s)
+                <p className="text-sm text-gray-600">
+                  កំពុងផ្ញើទៅកាន់និស្សិតចំនួន <strong>{selectedStudents.length}</strong> នាក់
                 </p>
               </div>
 
               <div>
-                <label className="label">Message *</label>
+                <label className="label">សារ *</label>
                 <textarea
                   className="input min-h-[150px]"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Enter your message here..."
+                  placeholder="បញ្ចូលសាររបស់អ្នកនៅទីនេះ..."
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  The message will be sent via Telegram bot with appropriate
-                  emoji formatting
+                  សារនេះនឹងត្រូវបានផ្ញើតាមរយៈ Telegram bot ជាមួយនឹងទម្រង់រូបអារម្មណ៍ (emoji) ដ៏សមស្រប
                 </p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Students will receive this message
-                  immediately if they have linked their Telegram account.
+                  <strong>ចំណាំ៖</strong> និស្សិតនឹងទទួលបានសារនេះភ្លាមៗ ប្រសិនបើពួកគេបានភ្ជាប់គណនី Telegram រួចរាល់។
                 </p>
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowSendModal(false)}
-                  className="flex-1 btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSendNotification}
-                  disabled={sendAlertMutation.isPending}
-                  className="flex-1 btn-primary"
-                >
-                  {sendAlertMutation.isPending
-                    ? 'Sending...'
-                    : 'Send Notification'}
-                </button>
-              </div>
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-xl">
+              <button
+                type="button"
+                onClick={() => setShowSendModal(false)}
+                className="btn-secondary"
+              >
+                បោះបង់
+              </button>
+              <button
+                type="button"
+                onClick={handleSendNotification}
+                disabled={sendAlertMutation.isPending}
+                className="btn-primary"
+              >
+                {sendAlertMutation.isPending
+                  ? 'កំពុងផ្ញើ...'
+                  : 'ផ្ញើការជូនដំណឹង'}
+              </button>
             </div>
           </div>
         </div>

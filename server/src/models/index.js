@@ -44,6 +44,8 @@ db.Transaction = require('./transaction.model')(sequelize, Sequelize);
 db.Notification = require('./notification.model')(sequelize, Sequelize);
 db.ActivityLog = require('./activityLog.model')(sequelize, Sequelize);
 db.Settings = require('./settings.model')(sequelize, Sequelize);
+db.Class = require('./class.model')(sequelize, Sequelize);
+db.ClassEnrollment = require('./classEnrollment.model')(sequelize, Sequelize);
 
 // Define associations
 // User - Student (One-to-One)
@@ -108,5 +110,13 @@ db.Course.belongsTo(db.Department, {
   foreignKey: 'departmentId',
   as: 'department',
 });
+
+// Student - ClassEnrollment (One-to-Many)
+db.Student.hasMany(db.ClassEnrollment, { foreignKey: 'Student_ID', sourceKey: 'studentId', as: 'enrollments' });
+db.ClassEnrollment.belongsTo(db.Student, { foreignKey: 'Student_ID', targetKey: 'studentId', as: 'student' });
+
+// Class - ClassEnrollment (One-to-Many)
+db.Class.hasMany(db.ClassEnrollment, { foreignKey: 'Class_ID', as: 'enrollments' });
+db.ClassEnrollment.belongsTo(db.Class, { foreignKey: 'Class_ID', as: 'class' });
 
 module.exports = db;

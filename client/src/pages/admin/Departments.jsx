@@ -231,85 +231,99 @@ export default function Departments() {
         </button>
       </div>
 
-      {/* Departments Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {departments?.map((department) => (
-          <div
-            key={department.id}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
+      {/* Departments Grid / Empty State */}
+      {!departments || departments.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-blue-50 p-4 rounded-full text-blue-500 mb-4">
+            <BuildingOffice2Icon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            មិនទាន់មានជំនាញឯកទេសទេ
+          </h3>
+          <p className="text-gray-500 max-w-sm">
+            សូមចុចប៊ូតុង <span className="font-semibold text-blue-600">"+ បន្ថែមជំនាញឯកទេស"</span> ខាងលើ ដើម្បីបង្កើតជំនាញឯកទេសដំបូងសម្រាប់សាលារបស់អ្នក។
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {departments.map((department) => (
+            <div
+              key={department.id}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-3 rounded-lg">
+                    <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">
+                      {department.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">{department.code}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
-                    {department.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">{department.code}</p>
-                </div>
-              </div>
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${department.isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                  }`}
-              >
-                {department.isActive ? 'សកម្ម' : 'អសកម្ម'}
-              </span>
-            </div>
-
-            {department.description && (
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {department.description}
-              </p>
-            )}
-
-            <div className="space-y-2 mb-4">
-              {department.headOfDepartment && (
-                <div className="text-sm">
-                  <span className="text-gray-500">ប្រធាន:</span>
-                  <span className="ml-2 text-gray-900">
-                    {department.headOfDepartment}
-                  </span>
-                </div>
-              )}
-              {department.location && (
-                <div className="text-sm">
-                  <span className="text-gray-500">ទីតាំង:</span>
-                  <span className="ml-2 text-gray-900">
-                    {department.location}
-                  </span>
-                </div>
-              )}
-              <div className="text-sm">
-                <span className="text-gray-500">មុខវិជ្ជា:</span>
-                <span className="ml-2 text-gray-900 font-medium">
-                  {department.courses?.length || 0}
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${department.isActive
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                    }`}
+                >
+                  {department.isActive ? 'សកម្ម' : 'អសកម្ម'}
                 </span>
               </div>
-            </div>
 
-            <div className="flex gap-2 pt-4 border-t">
-              <button
-                onClick={() => openModal(department)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-              >
-                <PencilSquareIcon className="h-4 w-4" />
-                កែប្រែ
-              </button>
-              <button
-                onClick={() => handleDelete(department)}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-              >
-                <TrashIcon className="h-4 w-4" />
-                លុប
-              </button>
+              {department.description && (
+                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {department.description}
+                </p>
+              )}
+
+              <div className="space-y-2 mb-4">
+                {department.headOfDepartment && (
+                  <div className="text-sm">
+                    <span className="text-gray-500">ប្រធាន:</span>
+                    <span className="ml-2 text-gray-900">
+                      {department.headOfDepartment}
+                    </span>
+                  </div>
+                )}
+                {department.location && (
+                  <div className="text-sm">
+                    <span className="text-gray-500">ទីតាំង:</span>
+                    <span className="ml-2 text-gray-900">
+                      {department.location}
+                    </span>
+                  </div>
+                )}
+                <div className="text-sm">
+                  <span className="text-gray-500">មុខវិជ្ជា:</span>
+                  <span className="ml-2 text-gray-900 font-medium">
+                    {department.courses?.length || 0}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4 border-t">
+                <button
+                  onClick={() => openModal(department)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                >
+                  <PencilSquareIcon className="h-4 w-4" />
+                  កែប្រែ
+                </button>
+                <button
+                  onClick={() => handleDelete(department)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  លុប
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && (
@@ -496,7 +510,7 @@ export default function Departments() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    សមត្ថភាពដាក់និស្សិត (Student Capacity)
+                    ចំនួននិស្សិត (Student Capacity)
                   </label>
                   <input
                     type="number"

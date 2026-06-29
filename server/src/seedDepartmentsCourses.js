@@ -12,32 +12,32 @@ async function seedDepartmentsAndCourses() {
     const departments = [
       {
         code: 'CS',
-        name: 'Computer Science',
-        description: 'Department of Computer Science and Information Technology',
+        name: 'វិទ្យាសាស្ត្រកុំព្យូទ័រ',
+        description: 'ដេប៉ាតឺម៉ង់វិទ្យាសាស្ត្រកុំព្យូទ័រ និងបច្ចេកវិទ្យាព័ត៌មាន',
         isActive: true,
       },
       {
         code: 'ENG',
-        name: 'Engineering',
-        description: 'Department of Engineering',
+        name: 'វិស្វកម្ម',
+        description: 'ដេប៉ាតឺម៉ង់វិស្វកម្ម និងសំណង់ស៊ីវិល',
         isActive: true,
       },
       {
         code: 'BUS',
-        name: 'Business Administration',
-        description: 'Department of Business and Management',
+        name: 'គ្រប់គ្រងពាណិជ្ជកម្ម',
+        description: 'ដេប៉ាតឺម៉ង់គ្រប់គ្រង ធុរកិច្ច និងហិរញ្ញវត្ថុ',
         isActive: true,
       },
       {
         code: 'ARCH',
-        name: 'Architecture',
-        description: 'Department of Architecture and Design',
+        name: 'ស្ថាបត្យកម្ម',
+        description: 'ដេប៉ាតឺម៉ង់ស្ថាបត្យកម្ម និងការរចនាអគារ',
         isActive: true,
       },
       {
         code: 'ELEC',
-        name: 'Electronics',
-        description: 'Department of Electronics and Communication',
+        name: 'អេឡិចត្រូនិក',
+        description: 'ដេប៉ាតឺម៉ង់អេឡិចត្រូនិក និងទូរគមនាគមន៍',
         isActive: true,
       },
     ];
@@ -52,7 +52,11 @@ async function seedDepartmentsAndCourses() {
         dept = await db.Department.create(deptData);
         console.log(`✅ Created department: ${deptData.name}`);
       } else {
-        console.log(`   Department ${deptData.name} already exists`);
+        // Update it with Khmer name if it already exists
+        dept.name = deptData.name;
+        dept.description = deptData.description;
+        await dept.save();
+        console.log(`   Department ${deptData.name} updated/already exists`);
       }
       createdDepartments[deptData.code] = dept;
     }
@@ -63,8 +67,8 @@ async function seedDepartmentsAndCourses() {
       // Computer Science Courses
       {
         code: 'CS101',
-        name: 'Introduction to Programming',
-        description: 'Fundamentals of programming using Python',
+        name: 'សេចក្តីផ្តើមនៃកម្មវិធីកុំព្យូទ័រ',
+        description: 'មូលដ្ឋានគ្រឹះនៃការសរសេរកម្មវិធីដោយប្រើប្រាស់ភាសា Python',
         departmentId: createdDepartments['CS'].id,
         credits: 3,
         duration: 4,
@@ -73,8 +77,8 @@ async function seedDepartmentsAndCourses() {
       },
       {
         code: 'CS201',
-        name: 'Data Structures and Algorithms',
-        description: 'Core data structures and algorithm design',
+        name: 'รចនាសម្ព័ន្ធទិន្នន័យ និងអាលកូរីត',
+        description: 'ការយល់ដឹងអំពីប្រភេទរចនាសម្ព័ន្ធទិន្នន័យ និងការរចនាអាលកូរីត',
         departmentId: createdDepartments['CS'].id,
         credits: 4,
         duration: 4,
@@ -83,8 +87,8 @@ async function seedDepartmentsAndCourses() {
       },
       {
         code: 'CS301',
-        name: 'Database Management Systems',
-        description: 'Design and implementation of database systems',
+        name: 'ប្រព័ន្ធគ្រប់គ្រងមូលដ្ឋានទិន្នន័យ',
+        description: 'ការរចនា និងការអនុវត្តប្រព័ន្ធគ្រប់គ្រងមូលដ្ឋានទិន្នន័យ SQL/NoSQL',
         departmentId: createdDepartments['CS'].id,
         credits: 3,
         duration: 4,
@@ -93,8 +97,8 @@ async function seedDepartmentsAndCourses() {
       },
       {
         code: 'CS401',
-        name: 'Web Development',
-        description: 'Full-stack web application development',
+        name: 'ការអភិវឌ្ឍន៍គេហទំព័រ',
+        description: 'ការបង្កើតគេហទំព័រពេញលេញ (Full-Stack Web Development)',
         departmentId: createdDepartments['CS'].id,
         credits: 4,
         duration: 4,
@@ -104,8 +108,8 @@ async function seedDepartmentsAndCourses() {
       // Engineering Courses
       {
         code: 'ENG101',
-        name: 'Engineering Mathematics',
-        description: 'Mathematical foundations for engineering',
+        name: 'គណិតវិទ្យាវិស្វកម្ម',
+        description: 'មូលដ្ឋានគ្រឹះគណិតវិទ្យាសម្រាប់មុខជំនាញវិស្វកម្ម',
         departmentId: createdDepartments['ENG'].id,
         credits: 4,
         duration: 4,
@@ -114,18 +118,8 @@ async function seedDepartmentsAndCourses() {
       },
       {
         code: 'ENG201',
-        name: 'Mechanics',
-        description: 'Principles of mechanics and dynamics',
-        departmentId: createdDepartments['ENG'].id,
-        credits: 3,
-        duration: 4,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'ENG301',
-        name: 'Thermodynamics',
-        description: 'Heat transfer and thermodynamic systems',
+        name: 'មេកានិចវិស្វកម្ម',
+        description: 'គោលការណ៍នៃមេកានិច និងចលនាវិទ្យា',
         departmentId: createdDepartments['ENG'].id,
         credits: 3,
         duration: 4,
@@ -135,8 +129,8 @@ async function seedDepartmentsAndCourses() {
       // Business Administration Courses
       {
         code: 'BUS101',
-        name: 'Introduction to Business',
-        description: 'Fundamentals of business management',
+        name: 'សេចក្តីផ្តើមនៃធុរកិច្ច',
+        description: 'មូលដ្ឋានគ្រឹះនៃការគ្រប់គ្រងធុរកិច្ច និងសហគ្រិនភាព',
         departmentId: createdDepartments['BUS'].id,
         credits: 3,
         duration: 4,
@@ -145,18 +139,8 @@ async function seedDepartmentsAndCourses() {
       },
       {
         code: 'BUS201',
-        name: 'Accounting Principles',
-        description: 'Financial and managerial accounting basics',
-        departmentId: createdDepartments['BUS'].id,
-        credits: 3,
-        duration: 4,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'BUS301',
-        name: 'Marketing Management',
-        description: 'Marketing strategies and consumer behavior',
+        name: 'គោលការណ៍គណនេយ្យ',
+        description: 'គណនេយ្យហិរញ្ញវត្ថុ និងគណនេយ្យគ្រប់គ្រងបឋម',
         departmentId: createdDepartments['BUS'].id,
         credits: 3,
         duration: 4,
@@ -166,30 +150,10 @@ async function seedDepartmentsAndCourses() {
       // Architecture Courses
       {
         code: 'ARCH101',
-        name: 'Architectural Design I',
-        description: 'Introduction to architectural design principles',
+        name: 'ការរចនាស្ថាបត្យកម្ម I',
+        description: 'ការរៀបចំគំនូសប្លង់ និងគោលការណ៍រចនាស្ថាបត្យកម្មបឋម',
         departmentId: createdDepartments['ARCH'].id,
         credits: 4,
-        duration: 5,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'ARCH201',
-        name: 'Building Construction',
-        description: 'Construction methods and materials',
-        departmentId: createdDepartments['ARCH'].id,
-        credits: 3,
-        duration: 5,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'ARCH301',
-        name: 'Urban Planning',
-        description: 'Principles of urban design and planning',
-        departmentId: createdDepartments['ARCH'].id,
-        credits: 3,
         duration: 5,
         level: 'undergraduate',
         isActive: true,
@@ -197,28 +161,8 @@ async function seedDepartmentsAndCourses() {
       // Electronics Courses
       {
         code: 'ELEC101',
-        name: 'Circuit Theory',
-        description: 'Basic electrical circuits and analysis',
-        departmentId: createdDepartments['ELEC'].id,
-        credits: 4,
-        duration: 4,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'ELEC201',
-        name: 'Digital Electronics',
-        description: 'Digital circuits and logic design',
-        departmentId: createdDepartments['ELEC'].id,
-        credits: 3,
-        duration: 4,
-        level: 'undergraduate',
-        isActive: true,
-      },
-      {
-        code: 'ELEC301',
-        name: 'Microprocessors',
-        description: 'Microprocessor architecture and programming',
+        name: 'ទ្រឹស្តីសៀគ្វីអគ្គិសនី',
+        description: 'ការវិភាគសៀគ្វីអគ្គិសនីជាមូលដ្ឋាន',
         departmentId: createdDepartments['ELEC'].id,
         credits: 4,
         duration: 4,
@@ -228,7 +172,7 @@ async function seedDepartmentsAndCourses() {
     ];
 
     for (const courseData of courses) {
-      const existing = await db.Course.findOne({
+      let existing = await db.Course.findOne({
         where: { code: courseData.code },
       });
 
@@ -236,7 +180,10 @@ async function seedDepartmentsAndCourses() {
         await db.Course.create(courseData);
         console.log(`✅ Created course: ${courseData.name}`);
       } else {
-        console.log(`   Course ${courseData.name} already exists`);
+        existing.name = courseData.name;
+        existing.description = courseData.description;
+        await existing.save();
+        console.log(`   Course ${courseData.name} updated/already exists`);
       }
     }
 

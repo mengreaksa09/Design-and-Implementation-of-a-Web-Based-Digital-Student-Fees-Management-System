@@ -54,7 +54,7 @@ export default function ConfirmModal({
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-[9999]" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -122,9 +122,9 @@ export default function ConfirmModal({
                   </div>
                   <button
                     onClick={onClose}
-                    className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex-shrink-0 p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
                   >
-                    <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <XMarkIcon className="h-5 w-5 text-white" />
                   </button>
                 </div>
 

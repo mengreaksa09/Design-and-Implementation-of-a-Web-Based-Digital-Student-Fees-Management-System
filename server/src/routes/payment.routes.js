@@ -764,7 +764,35 @@ router.post(
 // Download receipt
 router.get('/:id/receipt', auth, async (req, res) => {
   try {
-    const payment = await db.Payment.findByPk(req.params.id);
+    const payment = await db.Payment.findByPk(req.params.id, {
+      include: [
+        {
+          model: db.Student,
+          as: 'student',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['firstName', 'lastName', 'email'],
+            },
+          ],
+        },
+        {
+          model: db.FeeAssignment,
+          as: 'feeAssignment',
+          include: [
+            {
+              model: db.FeeStructure,
+              as: 'feeStructure',
+            },
+          ],
+        },
+        {
+          model: db.Transaction,
+          as: 'transaction',
+        },
+      ],
+    });
 
     if (!payment) {
       return res.status(404).json({
@@ -786,47 +814,38 @@ router.get('/:id/receipt', auth, async (req, res) => {
       }
     }
 
-    if (!payment.receiptPath) {
-      console.error('Receipt path not found for payment:', payment.id);
-      return res.status(404).json({
-        success: false,
-        message: 'Receipt not available. Please contact support.',
-      });
-    }
+    // Generate/Regenerate receipt PDF on the fly using latest styles and layout coordinates
+    const receiptData = {
+      receiptNumber: payment.receiptNumber,
+      studentId: payment.student?.id,
+      studentIdNumber: payment.student?.studentId,
+      studentName: `${payment.student?.user?.firstName || ''} ${payment.student?.user?.lastName || ''}`.trim() || 'N/A',
+      class: payment.student?.class || 'N/A',
+      department: payment.student?.department || 'N/A',
+      academicYear: payment.feeAssignment?.academicYear || 'N/A',
+      feeType: payment.feeAssignment?.feeStructure?.feeType || 'N/A',
+      feeDescription: payment.feeAssignment?.feeStructure?.name || 'Fee Payment',
+      amount: parseFloat(payment.amount),
+      currency: payment.currency || 'USD',
+      paymentDate: payment.paymentDate,
+      paymentMethod: payment.paymentMethod,
+      transactionId: payment.transaction?.transactionId,
+      status: payment.status || 'completed',
+    };
 
-    // Send the actual PDF file
-    const fs = require('fs');
-    const path = require('path');
+    const receiptResult = await generateReceipt(receiptData);
+    const filePath = receiptResult.fullPath;
 
-    // Handle both absolute and relative paths
-    let filePath;
-    // Check if it's a Windows absolute path (C:\...) or already resolved path
-    if (
-      path.isAbsolute(payment.receiptPath) &&
-      !payment.receiptPath.startsWith('/')
-    ) {
-      filePath = payment.receiptPath;
-    } else {
-      // Remove leading slash if present and resolve from server root directory
-      const cleanPath = payment.receiptPath.replace(/^\//, '');
-      // Use path.resolve to get absolute path from server directory
-      filePath = path.resolve(__dirname, '..', '..', cleanPath);
-    }
-
-    console.log('Receipt path:', payment.receiptPath);
-    console.log('Resolved file path:', filePath);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.error('Receipt file not found at path:', filePath);
-      return res.status(404).json({
-        success: false,
-        message:
-          'Receipt file not found on server. The receipt may have been deleted.',
+    // Update receipt path in database if it wasn't set or changed
+    if (payment.receiptPath !== receiptResult.fullPath) {
+      await payment.update({
+        receiptPath: receiptResult.fullPath,
+        qrCode: receiptResult.qrCode,
       });
     }
 
     // Set headers for PDF download
+    const fs = require('fs');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',

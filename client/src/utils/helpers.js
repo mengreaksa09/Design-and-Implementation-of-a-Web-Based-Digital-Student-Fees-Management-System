@@ -65,3 +65,19 @@ export const getPaymentMethodLabel = (method) => {
   };
   return labels[method] || method;
 };
+
+export const getTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const isOverdue = (dueDate) => {
+  if (!dueDate) return false;
+  // Parse dueDate if it contains a timestamp, but usually it is just YYYY-MM-DD
+  const dateOnly = typeof dueDate === 'string' ? dueDate.split('T')[0] : '';
+  if (!dateOnly) return false;
+  return dateOnly < getTodayStr();
+};

@@ -12,6 +12,7 @@ const {
   paginate,
   buildPaginationResponse,
   generateStudentId,
+  getTodayStr,
 } = require('../utils/helpers.util');
 const { sendEmail } = require('../utils/email.util');
 const db = require('../models');
@@ -87,6 +88,7 @@ router.get('/', auth, authorize('admin', 'accountant'), async (req, res) => {
     const shouldPaginateLater = !!paymentStatus;
     const queryOptions = {
       where,
+      distinct: true, // Fixes Sequelize findAndCountAll joined count duplication bug
       include: [
         includeUser,
         {
@@ -406,6 +408,7 @@ router.put('/:id', auth, authorize('admin', 'accountant'), async (req, res) => {
       firstName,
       lastName,
       phone,
+      latinName,
       dateOfBirth,
       gender,
       address,
@@ -418,6 +421,11 @@ router.put('/:id', auth, authorize('admin', 'accountant'), async (req, res) => {
       course,
       academicYear,
       semester,
+      generation,
+      batch,
+      studyLevel,
+      studyShift,
+      feeDiscount,
       guardianName,
       guardianPhone,
       guardianEmail,
@@ -440,6 +448,7 @@ router.put('/:id', auth, authorize('admin', 'accountant'), async (req, res) => {
     // Update student
     await student.update(
       {
+        Full_Name: latinName !== undefined ? latinName : student.Full_Name,
         dateOfBirth: dateOfBirth || student.dateOfBirth,
         gender: gender || student.gender,
         address: address !== undefined ? address : student.address,
@@ -452,6 +461,11 @@ router.put('/:id', auth, authorize('admin', 'accountant'), async (req, res) => {
         course: course || student.course,
         academicYear: academicYear || student.academicYear,
         semester: semester || student.semester,
+        generation: generation !== undefined ? generation : student.generation,
+        batch: batch !== undefined ? batch : student.batch,
+        studyLevel: studyLevel || student.studyLevel,
+        studyShift: studyShift || student.studyShift,
+        feeDiscount: feeDiscount !== undefined ? feeDiscount : student.feeDiscount,
         guardianName:
           guardianName !== undefined ? guardianName : student.guardianName,
         guardianPhone:
@@ -556,8 +570,17 @@ router.post(
     const errors = [];
     let successCount = 0;
 
-    // Helper function to normalize column names
-    const normalizeKey = (key) => key.toLowerCase().replace(/[_\s-]/g, '');
+    // Helper function to normalize column names and handle Excel UTF-8 BOM characters robustly
+    const normalizeKey = (key) => {
+      if (!key) return '';
+      return key
+        .toString()
+        .toLowerCase()
+        .replace(/^\ufeff/g, '') // Strip UTF-8 BOM
+        .replace(/[\u200b-\u200d\ufeff]/g, '') // Strip hidden zero-width chars
+        .trim()
+        .replace(/[_\s-]/g, '');
+    };
 
     // Helper function to get value from record with flexible column names
     const getValue = (record, ...possibleNames) => {
@@ -586,6 +609,49 @@ router.post(
       const totalStudents = await db.Student.count();
       let studentIdCounter = totalStudents;
 
+      // Helper function to normalize gender
+      const normalizeGender = (genderStr) => {
+        if (!genderStr) return null;
+        const clean = genderStr.trim().toLowerCase();
+        if (['male', 'm', 'ប្រុស', 'm (male)', 'ប្រុស (male)', 'ប្រុស/male'].includes(clean)) {
+          return 'male';
+        }
+        if (['female', 'f', 'ស្រី', 'f (female)', 'ស្រី (female)', 'ស្រី/female'].includes(clean)) {
+          return 'female';
+        }
+        return 'other';
+      };
+
+      // Helper function to normalize date of birth (DOB)
+      const normalizeDob = (dobStr) => {
+        if (!dobStr) return null;
+        const clean = dobStr.trim();
+        
+        // YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+          return clean;
+        }
+        
+        // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY or DD MM YYYY
+        const dmyMatch = clean.match(/^(\d{1,2})[./\s-](\d{1,2})[./\s-](\d{4})$/);
+        if (dmyMatch) {
+          const [_, d, m, y] = dmyMatch;
+          return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+
+        // MM/DD/YYYY or MM-DD-YYYY or other formats
+        const parsed = Date.parse(clean);
+        if (!isNaN(parsed)) {
+          const d = new Date(parsed);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        
+        return null;
+      };
+
       for (const record of records) {
         try {
           // Flexibly extract fields from CSV with various column name formats
@@ -611,6 +677,26 @@ router.post(
             'last_name',
             'last',
             'lname'
+          );
+          const latin = getValue(
+            record,
+            'Latin',
+            'latinName',
+            'latin_name',
+            'fullname',
+            'full_name'
+          );
+          const sex = getValue(
+            record,
+            'sex',
+            'gender'
+          );
+          const dob = getValue(
+            record,
+            'dob',
+            'dateOfBirth',
+            'date_of_birth',
+            'birthdate'
           );
           const studentId = getValue(
             record,
@@ -720,10 +806,16 @@ router.post(
             courseId = courseName;
           }
 
-          // Generate default password if not provided: firstname.lastname@000
-          const defaultPassword =
-            password ||
-            `${firstName.toLowerCase()}.${lastName.toLowerCase()}@000`;
+          // Generate default password if not provided: latin@000 or firstname.lastname@000
+          let defaultPassword = password;
+          if (!defaultPassword) {
+            if (latin) {
+              const cleanLatin = latin.toLowerCase().trim().replace(/\s+/g, '.');
+              defaultPassword = `${cleanLatin}@000`;
+            } else {
+              defaultPassword = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@000`;
+            }
+          }
           const salt = await bcrypt.genSalt(10);
           const hashedPassword = await bcrypt.hash(defaultPassword, salt);
 
@@ -752,6 +844,9 @@ router.post(
             academicYear,
             semester,
             status: 'active',
+            gender: normalizeGender(sex),
+            dateOfBirth: normalizeDob(dob),
+            Full_Name: latin || `${lastName} ${firstName}`.trim(),
           };
 
           console.log(`Creating student: ${email} with status: ${studentData.status}`);
@@ -916,7 +1011,7 @@ router.get('/dashboard', auth, authorize('student'), async (req, res) => {
 
       if (remaining > 0) {
         const dueDate = assignment.FeeStructure?.dueDate || assignment.dueDate;
-        const isOverdue = dueDate && new Date(dueDate) < new Date();
+        const isOverdue = dueDate && dueDate < getTodayStr();
 
         if (isOverdue) {
           overdueAmount += remaining;

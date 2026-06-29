@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth, authorize } = require('../middleware/auth.middleware');
-const { paginate, buildPaginationResponse } = require('../utils/helpers.util');
+const { paginate, buildPaginationResponse, getTodayStr } = require('../utils/helpers.util');
 const { sendEmail } = require('../utils/email.util');
 const db = require('../models');
 const { Op } = require('sequelize');
@@ -140,13 +140,15 @@ router.post(
         balanceAmount: { [Op.gt]: 0 },
       };
 
+      const todayStr = getTodayStr();
       if (type === 'overdue') {
-        where.dueDate = { [Op.lt]: new Date() };
+        where.dueDate = { [Op.lt]: todayStr };
       } else {
         // Due within 7 days
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-        where.dueDate = { [Op.between]: [new Date(), sevenDaysFromNow] };
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        const sevenDaysFromNowStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        where.dueDate = { [Op.between]: [todayStr, sevenDaysFromNowStr] };
       }
 
       if (studentIds && studentIds.length > 0) {
@@ -184,9 +186,9 @@ router.post(
 
         const template = type === 'overdue' ? 'overdueWarning' : 'feeReminder';
         const daysOverdue =
-          type === 'overdue'
-            ? Math.ceil(
-                (new Date() - new Date(assignment.dueDate)) /
+          type === 'overdue' && assignment.dueDate
+            ? Math.round(
+                (new Date(todayStr) - new Date(assignment.dueDate)) /
                   (1000 * 60 * 60 * 24)
               )
             : 0;

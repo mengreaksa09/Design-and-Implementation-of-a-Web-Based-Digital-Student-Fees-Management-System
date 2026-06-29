@@ -1,227 +1,254 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
+// ─────────────────────────────────────────────────────────────────
+// Helper: convert ISO date → DD/MM/YYYY for display
+// ─────────────────────────────────────────────────────────────────
+function isoToDMY(iso) {
+  if (!iso || !iso.includes('-')) return '';
+  const parts = iso.split('T')[0].split('-');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Loader – fetches data, then renders the form with correct defaults
+// ─────────────────────────────────────────────────────────────────
 export default function StudentForm() {
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const navigate = useNavigate();
+
+  // Departments always needed (for the select options)
+  const { data: departmentsData, isLoading: loadingDepts } = useQuery({
+    queryKey: ['departments-list'],
+    queryFn: async () => (await api.get('/departments/list')).data.data,
+    staleTime: 30_000,
+  });
+
+  // Student data (edit mode only)
+  const { data: existingStudent, isLoading: loadingStudent } = useQuery({
+    queryKey: ['student-edit', id],
+    queryFn: async () => (await api.get(`/students/${id}`)).data.data,
+    enabled: isEditMode,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  // Students count (create mode only – for auto-ID)
+  const { data: studentsCount } = useQuery({
+    queryKey: ['studentsCount'],
+    queryFn: async () => {
+      const r = await api.get('/students?limit=1&page=1&includeAll=true');
+      return r.data.pagination?.total || 0;
+    },
+    enabled: !isEditMode,
+    staleTime: 0,
+  });
+
+  // Block render until we have everything we need
+  const isReady = isEditMode
+    ? existingStudent && departmentsData && !loadingStudent && !loadingDepts
+    : departmentsData && !loadingDepts;
+
+  if (!isReady) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/admin/students')}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isEditMode ? 'កែប្រែទិន្នន័យនិស្សិត' : 'បញ្ចូលនិស្សិតថ្មី'}
+            </h1>
+            <p className="text-gray-600">កំពុងផ្ទុកទិន្នន័យ...</p>
+          </div>
+        </div>
+        <div className="card p-12 flex flex-col justify-center items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
+          <p className="text-gray-500 text-sm">សូមរង់ចាំ...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Compute defaultValues from existing student (edit) or fresh (create)
+  let defaultValues;
+  if (isEditMode && existingStudent) {
+    const s = existingStudent;
+    const u = s.user || {};
+    const [ayStart = '', ayEnd = ''] = (s.academicYear || '').split('-');
+    defaultValues = {
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      latinName: s.Full_Name || '',
+      dateOfBirth: isoToDMY(s.dateOfBirth),
+      gender: s.gender || '',
+      phone: u.phone || '',
+      email: u.email || '',
+      password: '',
+      department: s.department ? String(s.department) : '',
+      course: s.course || '',
+      generation: s.generation || '',
+      batch: s.batch || '',
+      class: s.class ? String(s.class) : '',
+      semester: s.semester || '',
+      studyLevel: s.studyLevel || '',
+      studyShift: s.studyShift || 'morning',
+      academicYearStart: ayStart,
+      academicYearEnd: ayEnd,
+      academicYear: s.academicYear || '',
+      feeDiscount: s.feeDiscount != null ? s.feeDiscount : 0,
+      studentId: s.studentId || '',
+    };
+  } else {
+    const nextId = studentsCount !== undefined
+      ? `STU${String(studentsCount + 1).padStart(6, '0')}`
+      : '';
+    defaultValues = {
+      firstName: '', lastName: '', latinName: '', dateOfBirth: '',
+      gender: '', phone: '', email: '', password: '',
+      department: '', course: '', generation: '', batch: '',
+      class: '', semester: '', studyLevel: '', studyShift: 'morning',
+      academicYearStart: '', academicYearEnd: '', academicYear: '',
+      feeDiscount: 0, studentId: nextId,
+    };
+  }
+
+  // Render the actual form with a key so React fully remounts it with the right defaults
+  return (
+    <StudentFormInner
+      key={isEditMode ? `edit-${id}` : 'create'}
+      isEditMode={isEditMode}
+      studentId={id}
+      existingStudent={existingStudent}
+      departmentsData={departmentsData}
+      defaultValues={defaultValues}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Inner Form – receives computed defaultValues, no async data needed
+// ─────────────────────────────────────────────────────────────────
+function StudentFormInner({
+  isEditMode,
+  studentId,
+  existingStudent,
+  departmentsData,
+  defaultValues,
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
-    reset,
     watch,
     setValue,
     formState: { errors },
-  } = useForm({
-    defaultValues: {
-      paymentType: 'cash',
-      studyShift: 'morning',
-      isFirstGeneration: 'no',
-    },
-  });
+  } = useForm({ defaultValues });
 
-  const firstName = watch('firstName');
-  const lastName = watch('lastName');
+  const latinName = watch('latinName');
   const phone = watch('phone');
   const selectedDepartment = watch('department');
 
-  // Fetch total students count for auto-generating student ID
-  const { data: studentsCount } = useQuery({
-    queryKey: ['studentsCount'],
-    queryFn: async () => {
-      const response = await api.get('/students?limit=1&page=1&includeAll=true');
-      return response.data.pagination?.total || 0;
-    },
-  });
-
-  // Fetch departments
-  const { data: departmentsData, isLoading: loadingDepartments } = useQuery({
-    queryKey: ['departments-list'],
-    queryFn: async () => {
-      const response = await api.get('/departments/list');
-      return response.data.data;
-    },
-  });
-
-  // Fetch courses
-  const { data: coursesData, isLoading: loadingCourses } = useQuery({
-    queryKey: ['courses-list'],
-    queryFn: async () => {
-      const response = await api.get('/courses/list');
-      return response.data.data;
-    },
-  });
-
-  // Filter courses based on selected department
-  const filteredCourses = selectedDepartment
-    ? coursesData?.filter(
-      (course) =>
-        course.departmentId === selectedDepartment ||
-        course.departmentId === parseInt(selectedDepartment)
-    ) || []
-    : [];
-
-  // Auto-sync course with department name
+  // Auto-sync course with department (create only)
   useEffect(() => {
-    if (selectedDepartment && departmentsData) {
+    if (!isEditMode && selectedDepartment && departmentsData) {
       const dept = departmentsData.find(d => String(d.id) === String(selectedDepartment));
-      if (dept) {
-        setValue('course', dept.name, { shouldValidate: true });
-      }
+      if (dept) setValue('course', dept.name, { shouldValidate: true });
     }
-  }, [selectedDepartment, departmentsData, setValue]);
+  }, [selectedDepartment, departmentsData, setValue, isEditMode]);
 
-  // Auto-generate student ID when component mounts
+  // Auto-generate password (create only)
   useEffect(() => {
-    if (studentsCount !== undefined) {
-      const newStudentId = `STU${String(studentsCount + 1).padStart(6, '0')}`;
-      setValue('studentId', newStudentId);
+    if (!isEditMode && latinName && phone && phone.length >= 3) {
+      const cleanLatin = latinName.toLowerCase().trim().replace(/\s+/g, '.');
+      setValue('password', `${cleanLatin}@${phone.slice(-3)}`);
     }
-  }, [studentsCount, setValue]);
+  }, [latinName, phone, setValue, isEditMode]);
 
-  // Auto-generate password based on firstName, lastName, @, and last 3 digits of phone
-  useEffect(() => {
-    if (firstName && lastName && phone && phone.length >= 3) {
-      const firstNameLower = firstName.toLowerCase().replace(/\\s+/g, '');
-      const lastNameLower = lastName.toLowerCase().replace(/\\s+/g, '');
-      const last3Phone = phone.slice(-3);
-      const generatedPassword = `${firstNameLower}.${lastNameLower}@${last3Phone}`;
-      setValue('password', generatedPassword);
-    }
-  }, [firstName, lastName, phone, setValue]);
-
-  // Handle email blur to auto-add @gmail.com
+  // ── Helpers ──────────────────────────────────────────────────────
   const handleEmailBlur = (e) => {
-    const value = e.target.value;
-    if (value && !value.includes('@')) {
-      setValue('email', `${value}@gmail.com`);
-    }
+    const v = e.target.value;
+    if (v && !v.includes('@')) setValue('email', `${v}@gmail.com`);
   };
 
-  // Auto-capitalize first letter of each word
-  const handleCapitalize = (e, fieldName) => {
-    const value = e.target.value;
-    const capitalized = value
-      .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    setValue(fieldName, capitalized);
-  };
-
-  // Format phone number: +855 XX XXX XXX
   const handlePhoneFormat = (e, fieldName) => {
     let value = e.target.value;
-
-    if (!value || value.length === 0) {
-      setValue(fieldName, '+855 ');
-      return;
-    }
-
-    let cleaned = value.replace(/\\s/g, '');
-
-    if (!cleaned.startsWith('+855')) {
-      cleaned = '+855' + cleaned.replace(/^\\+?\\d{0,3}/, '');
-    }
-
-    const prefix = '+855';
+    if (!value) { setValue(fieldName, '+855 '); return; }
+    let cleaned = value.replace(/\s/g, '');
+    if (!cleaned.startsWith('+855')) cleaned = '+855' + cleaned.replace(/^\+?\d{0,3}/, '');
     const digits = cleaned.slice(4);
-
-    if (digits.length === 0) {
-      setValue(fieldName, prefix + ' ');
-      return;
-    }
-
-    let formatted = prefix + ' ';
+    if (!digits) { setValue(fieldName, '+855 '); return; }
+    let formatted = '+855 ';
     for (let i = 0; i < digits.length; i++) {
-      if (i === 2 || i === 5) {
-        formatted += ' ';
-      }
+      if (i === 2 || i === 5) formatted += ' ';
       formatted += digits[i];
     }
-
     setValue(fieldName, formatted);
   };
 
-  // Format date: DD/MM/YYYY
   const handleDateFormat = (e) => {
-    let value = e.target.value.replace(/\\D/g, '');
-    let formatted = '';
-
-    if (value.length >= 1) {
-      let day = value.slice(0, 2);
-      if (value.length === 1 && parseInt(value) > 3) {
-        day = '0' + value;
-        value = day + value.slice(1);
-      }
-      formatted = day;
+    let v = e.target.value.replace(/\D/g, '');
+    let f = '';
+    if (v.length >= 1) {
+      let day = v.slice(0, 2);
+      if (v.length === 1 && parseInt(v) > 3) { day = '0' + v; v = day + v.slice(1); }
+      f = day;
     }
-    if (value.length >= 3) {
-      let month = value.slice(2, 4);
-      if (value.length === 3 && parseInt(value.slice(2, 3)) > 1) {
-        month = '0' + value.slice(2, 3);
-        value = value.slice(0, 2) + month + value.slice(3);
-      }
-      formatted = formatted.slice(0, 2) + '/' + month;
+    if (v.length >= 3) {
+      let month = v.slice(2, 4);
+      if (v.length === 3 && parseInt(v.slice(2, 3)) > 1) { month = '0' + v.slice(2, 3); v = v.slice(0, 2) + month + v.slice(3); }
+      f = f.slice(0, 2) + '/' + month;
     }
-    if (value.length >= 5) {
-      formatted = formatted.slice(0, 5) + '/' + value.slice(4, 8);
-    }
-
-    e.target.value = formatted;
+    if (v.length >= 5) f = f.slice(0, 5) + '/' + v.slice(4, 8);
+    e.target.value = f;
   };
 
-  // Convert number to Khmer words (simple implementation)
-  const numberToKhmerWords = (num) => {
-    if (!num) return '';
-    const ones = ['', 'មួយ', 'ពីរ', 'បី', 'បួន', 'ប្រាំ', 'ប្រាំមួយ', 'ប្រាំពីរ', 'ប្រាំបី', 'ប្រាំបួន'];
-    const tens = ['', 'ដប់', 'ម្ភៃ', 'សាមសិប', 'សែសិប', 'ហាសិប', 'ហុកសិប', 'ចិតសិប', 'ប៉ែតសិប', 'កៅសិប'];
-
-    // Simple conversion for numbers up to 999,999
-    const amount = parseInt(num);
-    if (isNaN(amount)) return '';
-
-    return `${amount.toLocaleString()} ដុល្លារ`; // Simplified
-  };
-
-  const mutation = useMutation({
-    mutationFn: (data) => {
-      return api.post('/students', data);
-    },
+  // ── Mutations ─────────────────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: (data) => api.post('/students', data),
     onSuccess: () => {
       toast.success('បានបន្ថែមនិស្សិតដោយជោគជ័យ');
       queryClient.invalidateQueries({ queryKey: ['students'] });
       navigate('/admin/students');
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'មានបញ្ហាក្នុងការបន្ថែម');
-    },
+    onError: (e) => toast.error(e.response?.data?.message || 'មានបញ្ហាក្នុងការបន្ថែម'),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (data) => api.put(`/students/${studentId}`, data),
+    onSuccess: () => {
+      toast.success('បានកែប្រែទិន្នន័យនិស្សិតដោយជោគជ័យ');
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-edit', studentId] });
+      navigate('/admin/students');
+    },
+    onError: (e) => toast.error(e.response?.data?.message || 'មានបញ្ហាក្នុងការកែប្រែ'),
+  });
+
+  const mutation = isEditMode ? updateMutation : createMutation;
+
   const onSubmit = (data) => {
-    // Convert dateOfBirth from DD/MM/YYYY to YYYY-MM-DD
     if (data.dateOfBirth) {
-      const parts = data.dateOfBirth.split('/');
-      if (parts.length === 3) {
-        data.dateOfBirth = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
+      const p = data.dateOfBirth.split('/');
+      if (p.length === 3) data.dateOfBirth = `${p[2]}-${p[1]}-${p[0]}`;
     }
-
-    // Convert paymentDate from DD/MM/YYYY to YYYY-MM-DD
-    if (data.paymentDate) {
-      const parts = data.paymentDate.split('/');
-      if (parts.length === 3) {
-        data.paymentDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
-    }
-
     mutation.mutate(data);
   };
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -234,382 +261,308 @@ export default function StudentForm() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            បញ្ចូលនិស្សិតថ្មី
+            {isEditMode ? 'កែប្រែទិន្នន័យនិស្សិត' : 'បញ្ចូលនិស្សិតថ្មី'}
           </h1>
-          <p className="text-gray-600">សូមបំពេញព័ត៌មានលម្អិតខាងក្រោម</p>
+          <p className="text-gray-600">
+            {isEditMode
+              ? `${existingStudent?.user?.firstName || ''} ${existingStudent?.user?.lastName || ''} — ${existingStudent?.studentId || ''}`
+              : 'សូមបំពេញព័ត៌មានលម្អិតខាងក្រោម'}
+          </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* ព័ត៌មានផ្ទាល់ខ្លួន - Personal Information */}
+        {/* ── Personal Info ─────────────────────────────────────── */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            ពត៌មានផ្ទាល់ខ្លួននិស្សិត
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Row 1: ឈ្មោះ & អក្សរឡាតាំង */}
-            <div>
-              <label className="label">ឈ្មោះ (ជាភាសាខ្មែរ) *</label>
-              <input
-                type="text"
-                autoFocus
-                className={`input ${errors.khmerName ? 'border-red-500' : ''}`}
-                placeholder="បំពេញឈ្មោះជាភាសាខ្មែរ"
-                {...register('khmerName', {
-                  required: 'ត្រូវបំពេញឈ្មោះជាភាសាខ្មែរ',
-                })}
-              />
-              {errors.khmerName && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.khmerName.message}
-                </p>
-              )}
-            </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">ពត៌មានផ្ទាល់ខ្លួននិស្សិត</h3>
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
 
-            <div>
-              <label className="label">អក្សរឡាតាំង (Latin Name) *</label>
+            {/* នាមត្រកូល */}
+            <div className="md:col-span-3">
+              <label className="label">នាមត្រកូល *</label>
               <input
                 type="text"
                 className={`input ${errors.firstName ? 'border-red-500' : ''}`}
-                placeholder="First Name"
-                {...register('firstName', {
-                  required: 'Required',
-                })}
-                onChange={(e) => handleCapitalize(e, 'firstName')}
+                placeholder="ឧ. ចាន់"
+                {...register('firstName', { required: 'ត្រូវបំពេញនាមត្រកូល' })}
               />
-              {errors.firstName && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.firstName.message}
-                </p>
-              )}
+              {errors.firstName && <p className="mt-1 text-sm text-red-500">{errors.firstName.message}</p>}
             </div>
 
-            <div>
-              <label className="label">នាមត្រកូល (Last Name) *</label>
+            {/* នាមខ្លួន */}
+            <div className="md:col-span-3">
+              <label className="label">នាមខ្លួន *</label>
               <input
                 type="text"
                 className={`input ${errors.lastName ? 'border-red-500' : ''}`}
-                placeholder="Last Name"
-                {...register('lastName', { required: 'Required' })}
-                onChange={(e) => handleCapitalize(e, 'lastName')}
+                placeholder="ឧ. សុខ"
+                {...register('lastName', { required: 'ត្រូវបំពេញនាមខ្លួន' })}
               />
-              {errors.lastName && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.lastName.message}
-                </p>
-              )}
+              {errors.lastName && <p className="mt-1 text-sm text-red-500">{errors.lastName.message}</p>}
             </div>
 
-            {/* Row 2: ថ្ងៃខែឆ្នាំកំណើត & ភេទ */}
-            <div>
+            {/* អក្សរឡាតាំង */}
+            <div className="md:col-span-3">
+              <label className="label">អក្សរឡាតាំង *</label>
+              <input
+                type="text"
+                className={`input ${errors.latinName ? 'border-red-500' : ''}`}
+                placeholder="ឧ. CHAN SOK"
+                {...register('latinName', { required: 'ត្រូវបំពេញអក្សរឡាតាំង' })}
+                onChange={(e) => {
+                  e.target.value = e.target.value.toUpperCase();
+                  setValue('latinName', e.target.value);
+                }}
+              />
+              {errors.latinName && <p className="mt-1 text-sm text-red-500">{errors.latinName.message}</p>}
+            </div>
+
+            {/* ថ្ងៃខែឆ្នាំកំណើត */}
+            <div className="md:col-span-3">
               <label className="label">ថ្ងៃខែឆ្នាំកំណើត (DD/MM/YYYY) *</label>
               <input
                 type="text"
                 className={`input ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                 placeholder="01/01/2000"
                 maxLength={10}
-                {...register('dateOfBirth', {
-                  required: 'ត្រូវបំពេញថ្ងៃខែឆ្នាំកំណើត',
-                })}
+                {...register('dateOfBirth', { required: 'ត្រូវបំពេញថ្ងៃខែឆ្នាំកំណើត' })}
                 onKeyUp={handleDateFormat}
               />
-              {errors.dateOfBirth && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.dateOfBirth.message}
-                </p>
-              )}
+              {errors.dateOfBirth && <p className="mt-1 text-sm text-red-500">{errors.dateOfBirth.message}</p>}
             </div>
 
-            <div>
-              <label className="label">ភេទ (Gender) *</label>
+            {/* ភេទ */}
+            <div className="md:col-span-1">
+              <label className="label">ភេទ *</label>
               <select
                 className={`input ${errors.gender ? 'border-red-500' : ''}`}
-                defaultValue=""
                 {...register('gender', { required: 'ត្រូវជ្រើសរើសភេទ' })}
               >
-                <option value="" disabled>
-                  ជ្រើសរើសភេទ
-                </option>
-                <option value="Male">ប្រុស (Male)</option>
-                <option value="Female">ស្រី (Female)</option>
+                <option value="">ជ្រើសរើសភេទ</option>
+                <option value="Male">ប្រុស</option>
+                <option value="Female">ស្រី</option>
               </select>
-              {errors.gender && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.gender.message}
-                </p>
-              )}
+              {errors.gender && <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>}
             </div>
 
-            {/* Row 3: Phone */}
-            <div>
-              <label className="label">ទូរស័ព្ទ (Phone) *</label>
+            {/* ទូរស័ព្ទ */}
+            <div className="md:col-span-2">
+              <label className="label">ទូរស័ព្ទ *</label>
               <input
                 type="tel"
                 className={`input ${errors.phone ? 'border-red-500' : ''}`}
                 placeholder="+855 12 345 678"
                 maxLength={16}
-                {...register('phone', {
-                  required: 'ត្រូវបំពេញលេខទូរស័ព្ទ',
-                })}
+                {...register('phone', { required: 'ត្រូវបំពេញលេខទូរស័ព្ទ' })}
                 onChange={(e) => handlePhoneFormat(e, 'phone')}
-                onFocus={(e) => {
-                  if (!e.target.value) {
-                    setValue('phone', '+855 ');
-                  }
-                }}
+                onFocus={(e) => { if (!e.target.value) setValue('phone', '+855 '); }}
               />
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.phone.message}
-                </p>
-              )}
+              {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone.message}</p>}
             </div>
 
-
-
-            {/* Row 4: Email (Optional) */}
-            <div className="md:col-span-2">
-              <label className="label">អ៊ីមែល (Email)</label>
+            {/* អ៊ីមែល */}
+            <div className="md:col-span-3">
+              <label className="label">អ៊ីមែល</label>
               <input
                 type="email"
-                className={`input ${errors.email ? 'border-red-500' : ''}`}
-                placeholder="username (auto @gmail.com)"
+                className={`input ${isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                placeholder="username@gmail.com"
+                readOnly={isEditMode}
                 {...register('email')}
                 onChange={(e) => {
-                  e.target.value = e.target.value.toLowerCase();
-                  setValue('email', e.target.value);
+                  if (!isEditMode) {
+                    e.target.value = e.target.value.toLowerCase();
+                    setValue('email', e.target.value);
+                  }
                 }}
-                onBlur={handleEmailBlur}
+                onBlur={isEditMode ? undefined : handleEmailBlur}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                វាយឈ្មោះអ្នកប្រើប្រាស់ហើយនឹងបន្ថែម @gmail.com ស្វ័យប្រវត្តិ (ស្រេចចិត្ត)
-              </p>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.email.message}
-                </p>
-              )}
+              {isEditMode && <p className="mt-1 text-xs text-gray-400">មិនអាចផ្លាស់ប្ដូរអ៊ីមែលបានទេ</p>}
             </div>
 
-
+            {/* Password (create only) */}
+            {!isEditMode && (
+              <div className="md:col-span-3">
+                <label className="label">លេខសម្ងាត់ *</label>
+                <input
+                  type="text"
+                  className={`input ${errors.password ? 'border-red-500' : ''}`}
+                  placeholder="auto-generated"
+                  {...register('password', {
+                    required: 'ត្រូវបំពេញលេខសម្ងាត់',
+                    minLength: { value: 6, message: 'យ៉ាងហោចណាស់ 6 តួ' },
+                  })}
+                />
+                <p className="mt-1 text-xs text-gray-500">បង្កើតដោយស្វ័យប្រវត្តិ: latinname@last3digits</p>
+                {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* ព័ត៌មានសិក្សា - Academic Information */}
+        {/* ── Academic Info ─────────────────────────────────────── */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            ព័ត៌មានសិក្សា
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Row 1: ជំនាញឯកទេស & និស្សិតជំនាន់ទី១ */}
-            <div>
-              <label className="label">ជំនាញឯកទេស (Specialization) *</label>
-              <select
-                className={`input ${errors.department ? 'border-red-500' : ''}`}
-                defaultValue=""
-                disabled={loadingDepartments}
-                {...register('department', {
-                  required: 'ត្រូវជ្រើសរើសជំនាញឯកទេស',
-                })}
-              >
-                <option value="" disabled>
-                  {loadingDepartments
-                    ? 'កំពុងផ្ទុក...'
-                    : 'ជ្រើសរើសជំនាញឯកទេស'}
-                </option>
-                {departmentsData?.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-              {errors.department && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.department.message}
-                </p>
-              )}
-              <input type="hidden" {...register('course')} />
-            </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">ព័ត៌មានសិក្សា</h3>
+          <div className="space-y-6">
 
-            <div>
-              <label className="label">ជំនាន់ (Generation) *</label>
-              <input
-                type="text"
-                className={`input ${errors.generation ? 'border-red-500' : ''}`}
-                placeholder="ឧ. ជំនាន់ទី១, ជំនាន់ទី២"
-                {...register('generation', {
-                  required: 'ត្រូវបំពេញជំនាន់សិក្សា',
-                })}
-              />
-              {errors.generation && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.generation.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">ការបញ្ចុះតម្លៃ (Fees Discount) *</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  className={`input w-32 ${errors.feeDiscount ? 'border-red-500' : ''}`}
-                  placeholder="0"
-                  {...register('feeDiscount', {
-                    required: 'ត្រូវបំពេញការបញ្ចុះតម្លៃ',
-                    min: { value: 0, message: 'ត្រូវតែ 0% ឬក្រោយជាង' },
-                    max: { value: 100, message: 'ត្រូវតែ 100% ឬតូចជាង' },
-                  })}
-                />
-                <span className="text-gray-700 font-medium">%</span>
+            {/* ជំនាញ & ជំនាន់ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="label">ជំនាញឯកទេស *</label>
+                <select
+                  className={`input ${errors.department ? 'border-red-500' : ''}`}
+                  {...register('department', { required: 'ត្រូវជ្រើសរើសជំនាញឯកទេស' })}
+                >
+                  <option value="">ជ្រើសរើសជំនាញឯកទេស</option>
+                  {departmentsData?.map((dept) => (
+                    <option key={dept.id} value={String(dept.id)}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.department && <p className="mt-1 text-sm text-red-500">{errors.department.message}</p>}
+                <input type="hidden" {...register('course')} />
               </div>
-              {errors.feeDiscount && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.feeDiscount.message}
-                </p>
-              )}
-              <p className="mt-1 text-xs text-gray-500">
-                បញ្ចូលភាគរយបញ្ចុះតម្លៃ (0-100%)
-              </p>
-            </div>
 
-            <div>
-              <label className="label">ក្នុងឆ្នាំសិក្សា (Academic Year) *</label>
-              <div className="flex gap-2 items-center">
+              <div>
+                <label className="label">ជំនាន់ (Generation) *</label>
                 <input
                   type="text"
-                  className="input w-24 text-center"
-                  placeholder="2024"
-                  maxLength={4}
-                  {...register('academicYearStart', {
-                    required: 'Required',
-                  })}
-                  onChange={(e) => {
-                    const startYear = e.target.value;
-                    if (startYear.length === 4 && /^\d{4}$/.test(startYear)) {
-                      const endYear = parseInt(startYear) + 1;
-                      setValue('academicYearEnd', String(endYear));
-                      setValue('academicYear', `${startYear}-${endYear}`);
-                    }
-                  }}
+                  className={`input ${errors.generation ? 'border-red-500' : ''}`}
+                  placeholder="ខ. ជំនាន់ទី១"
+                  {...register('generation', { required: 'ត្រូវបំពេញជំនាន់សិក្សា' })}
                 />
-                <span className="text-gray-500 font-medium">-</span>
+                {errors.generation && <p className="mt-1 text-sm text-red-500">{errors.generation.message}</p>}
+              </div>
+            </div>
+
+            {/* ការបញ្ចុះតម្លៃ & ឆ្នាំសិក្សា */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="label">ការបញ្ចុះតម្លៃ *</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    className={`input w-32 ${errors.feeDiscount ? 'border-red-500' : ''}`}
+                    placeholder="0"
+                    {...register('feeDiscount', {
+                      required: 'ត្រូវបំពេញការបញ្ចុះតម្លៃ',
+                      min: { value: 0, message: 'ត្រូវតែ 0% ឬក្រោយជាង' },
+                      max: { value: 100, message: 'ត្រូវតែ 100% ឬតូចជាង' },
+                    })}
+                  />
+                  <span className="text-gray-700 font-medium">%</span>
+                </div>
+                {errors.feeDiscount && <p className="mt-1 text-sm text-red-500">{errors.feeDiscount.message}</p>}
+              </div>
+
+              <div>
+                <label className="label">ក្នុងឆ្នាំសិក្សា *</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    className="input w-24 text-center"
+                    placeholder="2024"
+                    maxLength={4}
+                    {...register('academicYearStart', { required: 'ត្រូវបំពេញឆ្នាំសិក្សា' })}
+                    onChange={(e) => {
+                      const y = e.target.value;
+                      if (y.length === 4 && /^\d{4}$/.test(y)) {
+                        const end = parseInt(y) + 1;
+                        setValue('academicYearEnd', String(end));
+                        setValue('academicYear', `${y}-${end}`);
+                      }
+                    }}
+                  />
+                  <span className="text-gray-500 font-medium">-</span>
+                  <input
+                    type="text"
+                    className="input w-24 text-center"
+                    placeholder="2025"
+                    maxLength={4}
+                    {...register('academicYearEnd', { required: 'ត្រូវបំពេញឆ្នាំសិក្សា' })}
+                  />
+                </div>
+                <input type="hidden" {...register('academicYear')} />
+              </div>
+            </div>
+
+            {/* វគ្គ & ឆមាស */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="label">វគ្គទី *</label>
                 <input
                   type="text"
-                  className="input w-24 text-center"
-                  placeholder="2025"
-                  maxLength={4}
-                  {...register('academicYearEnd', {
-                    required: 'Required',
-                  })}
+                  className={`input ${errors.batch ? 'border-red-500' : ''}`}
+                  placeholder="ខ. វគ្គទី១"
+                  {...register('batch', { required: 'ត្រូវបំពេញវគ្គ' })}
                 />
+                {errors.batch && <p className="mt-1 text-sm text-red-500">{errors.batch.message}</p>}
               </div>
-              <input type="hidden" {...register('academicYear')} />
+
+              <div>
+                <label className="label">ឆមាសទី *</label>
+                <select
+                  className={`input ${errors.semester ? 'border-red-500' : ''}`}
+                  {...register('semester', { required: 'ត្រូវជ្រើសរើសឆមាស' })}
+                >
+                  <option value="">ជ្រើសរើសឆមាស</option>
+                  <option value="1st">ឆមាសទី១</option>
+                  <option value="2nd">ឆមាសទី២</option>
+                </select>
+                {errors.semester && <p className="mt-1 text-sm text-red-500">{errors.semester.message}</p>}
+              </div>
             </div>
 
-            {/* Row 2: វគ្គទី, ឆមាសទី, ឆ្នាំទី */}
-            <div>
-              <label className="label">វគ្គទី (Batch) *</label>
-              <input
-                type="text"
-                className={`input ${errors.batch ? 'border-red-500' : ''}`}
-                placeholder="ឧ. វគ្គទី១, វគ្គទី២"
-                {...register('batch', {
-                  required: 'ត្រូវបំពេញវគ្គ',
-                })}
-              />
-              {errors.batch && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.batch.message}
-                </p>
-              )}
+            {/* ឆ្នាំ & កម្រិតសិក្សា */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="label">ឆ្នាំទី *</label>
+                <select
+                  className={`input ${errors.class ? 'border-red-500' : ''}`}
+                  {...register('class', { required: 'ត្រូវជ្រើសរើសឆ្នាំសិក្សា' })}
+                >
+                  <option value="">ជ្រើសរើសឆ្នាំសិក្សា</option>
+                  <option value="1">ឆ្នាំទី១</option>
+                  <option value="2">ឆ្នាំទី២</option>
+                  <option value="3">ឆ្នាំទី៣</option>
+                  <option value="4">ឆ្នាំទី៤</option>
+                  <option value="5">ឆ្នាំទី៥</option>
+                </select>
+                {errors.class && <p className="mt-1 text-sm text-red-500">{errors.class.message}</p>}
+              </div>
+
+              <div>
+                <label className="label">កម្រិតសិក្សា *</label>
+                <select
+                  className={`input ${errors.studyLevel ? 'border-red-500' : ''}`}
+                  {...register('studyLevel', { required: 'ត្រូវជ្រើសរើសកម្រិតសិក្សា' })}
+                >
+                  <option value="">ជ្រើសរើសកម្រិតសិក្សា</option>
+                  <option value="Bachelor">បរិញ្ញាបត្រ</option>
+                  <option value="Associate">អនុបណ្ឌិត</option>
+                  <option value="Diploma">ឌីប្លូម</option>
+                  <option value="Certificate">វិញ្ញាបនប័ត្រ</option>
+                </select>
+                {errors.studyLevel && <p className="mt-1 text-sm text-red-500">{errors.studyLevel.message}</p>}
+              </div>
             </div>
 
-            <div>
-              <label className="label">ឆមាសទី (Semester) *</label>
-              <select
-                className={`input ${errors.semester ? 'border-red-500' : ''}`}
-                defaultValue=""
-                {...register('semester', { required: 'ត្រូវជ្រើសរើសឆមាស' })}
-              >
-                <option value="" disabled>
-                  ជ្រើសរើសឆមាស
-                </option>
-                <option value="1st">ឆមាសទី១ (1st Semester)</option>
-                <option value="2nd">ឆមាសទី២ (2nd Semester)</option>
-              </select>
-              {errors.semester && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.semester.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">ឆ្នាំទី (Year Level) *</label>
-              <select
-                className={`input ${errors.class ? 'border-red-500' : ''}`}
-                defaultValue=""
-                {...register('class', { required: 'ត្រូវជ្រើសរើសឆ្នាំសិក្សា' })}
-              >
-                <option value="" disabled>
-                  ជ្រើសរើសឆ្នាំសិក្សា
-                </option>
-                <option value="1">ឆ្នាំទី១ (Year 1)</option>
-                <option value="2">ឆ្នាំទី២ (Year 2)</option>
-                <option value="3">ឆ្នាំទី៣ (Year 3)</option>
-                <option value="4">ឆ្នាំទី៤ (Year 4)</option>
-                <option value="5">ឆ្នាំទី៥ (Year 5)</option>
-              </select>
-              {errors.class && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.class.message}
-                </p>
-              )}
-            </div>
-
-
-
-            {/* Row 4: កម្រិតសិក្សា & វេនសិក្សា */}
-            <div>
-              <label className="label">កម្រិតសិក្សា (Education Level) *</label>
-              <select
-                className={`input ${errors.studyLevel ? 'border-red-500' : ''}`}
-                defaultValue=""
-                {...register('studyLevel', {
-                  required: 'ត្រូវជ្រើសរើសកម្រិតសិក្សា',
-                })}
-              >
-                <option value="" disabled>
-                  ជ្រើសរើសកម្រិតសិក្សា
-                </option>
-                <option value="Bachelor">បរិញ្ញាបត្រ (Bachelor)</option>
-                <option value="Associate">អនុបណ្ឌិត (Associate)</option>
-                <option value="Diploma">ឌីប្លូម (Diploma)</option>
-                <option value="Certificate">វិញ្ញាបនប័ត្រ (Certificate)</option>
-              </select>
-              {errors.studyLevel && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.studyLevel.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="label">វេនសិក្សា (Study Shift) *</label>
-              <select
-                className="input"
-                defaultValue="morning"
-                {...register('studyShift')}
-              >
-                <option value="morning">ព្រឹក (Morning)</option>
-                <option value="afternoon">រសៀល (Afternoon)</option>
-                <option value="evening">យប់ (Evening)</option>
-                <option value="weekend">សៅរ៍-អាទិត្យ (Weekend)</option>
-              </select>
+            {/* វេនសិក្សា */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="label">វេនសិក្សា *</label>
+                <select className="input" {...register('studyShift')}>
+                  <option value="morning">ព្រឹក</option>
+                  <option value="afternoon">រសៀល</option>
+                  <option value="evening">យប់</option>
+                  <option value="weekend">សៅរ៍-អាទិត្យ</option>
+                </select>
+              </div>
+              <div />
             </div>
           </div>
         </div>
@@ -621,17 +574,21 @@ export default function StudentForm() {
             onClick={() => navigate('/admin/students')}
             className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            បោះបង់ (Cancel)
+            បោះបង់
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
             className="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {mutation.isPending ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក (Save)'}
+            {mutation.isPending
+              ? 'កំពុងរក្សាទុក...'
+              : isEditMode
+              ? 'រក្សាទុកការផ្លាស់ប្ដូរ'
+              : 'រក្សាទុក'}
           </button>
         </div>
-      </form >
-    </div >
+      </form>
+    </div>
   );
 }

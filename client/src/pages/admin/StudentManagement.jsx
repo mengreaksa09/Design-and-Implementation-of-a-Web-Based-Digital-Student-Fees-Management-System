@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
@@ -11,10 +12,11 @@ import {
   PencilSquareIcon,
   TrashIcon,
   EyeIcon,
-  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
   FunnelIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
 export default function StudentManagement() {
@@ -120,7 +122,7 @@ export default function StudentManagement() {
 
   const handleImport = () => {
     if (!selectedFile) {
-      toast.error('សូមជ្រើសរើសឯកសារ');
+      toast.error('សូមជ្រើសរើសឯកសារ CSV ជាមុនសិន!');
       return;
     }
     const formData = new FormData();
@@ -148,7 +150,7 @@ export default function StudentManagement() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            ការគ្រប់គ្រងនិស្សិត (Student Management)
+            ការគ្រប់គ្រងនិស្សិត
           </h1>
           <p className="text-gray-600">
             គ្រប់គ្រងនិស្សិតទាំងអស់ និងកំណត់ត្រាបង់ប្រាក់របស់ពួកគេ
@@ -159,8 +161,8 @@ export default function StudentManagement() {
             onClick={() => setShowImportModal(true)}
             className="btn-secondary flex items-center gap-2"
           >
-            <ArrowUpTrayIcon className="h-5 w-5" />
-            នាំចូល CSV
+            <ArrowDownTrayIcon className="h-5 w-5" />
+            នាំចូល Excel
           </button>
           <Link
             to="/admin/students/new"
@@ -198,7 +200,7 @@ export default function StudentManagement() {
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
             <div>
-              <label className="label">ជំនាញឯកទេស (Department)</label>
+              <label className="label">ជំនាញឯកទេស</label>
               <select
                 className="input"
                 value={filters.department}
@@ -206,7 +208,7 @@ export default function StudentManagement() {
                   setFilters({ ...filters, department: e.target.value })
                 }
               >
-                <option value="">ទាំងអស់ (All Departments)</option>
+                <option value="">ទាំងអស់</option>
                 {departmentsData?.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
@@ -215,7 +217,7 @@ export default function StudentManagement() {
               </select>
             </div>
             <div>
-              <label className="label">ស្ថានភាពបង់ប្រាក់ (Payment Status)</label>
+              <label className="label">ស្ថានភាពបង់ប្រាក់</label>
               <select
                 className="input"
                 value={filters.paymentStatus}
@@ -233,55 +235,70 @@ export default function StudentManagement() {
         )}
       </div>
 
-      {/* Students Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  និស្សិត (Student)
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  លេខសម្គាល់
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ជំនាញឯកទេស
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ថ្លៃសិក្សាសរុប
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  បានបង់
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ស្ថានភាព
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  សកម្មភាព
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    </div>
-                  </td>
+      {/* Students Table / Empty State */}
+      {isLoading ? (
+        <div className="card p-12 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      ) : !data?.students || data.students.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-indigo-50 p-4 rounded-full text-indigo-500 mb-4">
+            <UserGroupIcon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            មិនទាន់មាននិស្សិតទេ
+          </h3>
+          <p className="text-gray-500 max-w-sm mb-4">
+            សូមចុចប៊ូតុងខាងក្រោម ឬប៊ូតុងខាងលើ ដើម្បីបន្ថែមនិស្សិតដំបូងរបស់អ្នក។
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5" />
+              នាំចូល Excel
+            </button>
+            <Link
+              to="/admin/students/new"
+              className="btn-primary flex items-center gap-2"
+            >
+              <PlusIcon className="h-5 w-5" />
+              បន្ថែមនិស្សិត
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ឈ្មោះនិស្សិត
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    លេខសម្គាល់
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ជំនាញឯកទេស
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ថ្លៃសិក្សាសរុប
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    បានបង់
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ស្ថានភាព
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    សកម្មភាព
+                  </th>
                 </tr>
-              ) : data?.students?.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    រកមិនឃើញនិស្សិតទេ
-                  </td>
-                </tr>
-              ) : (
-                data?.students?.map((student) => (
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data?.students?.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -294,6 +311,11 @@ export default function StudentManagement() {
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {student.user?.firstName} {student.user?.lastName}
+                            {student.Full_Name && (
+                              <span className="ml-1.5 text-xs font-normal text-gray-500 uppercase">
+                                ({student.Full_Name})
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">
                             {student.user?.email}
@@ -347,11 +369,10 @@ export default function StudentManagement() {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
         {/* Pagination */}
         {data?.pagination && data.pagination.total > 0 && (
@@ -396,17 +417,18 @@ export default function StudentManagement() {
           </div>
         )}
       </div>
+    )}
 
       {/* Import Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+      {showImportModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" style={{ margin: 0 }}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 shadow-2xl">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               នាំចូលនិស្សិត
             </h3>
             <div className="space-y-4">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <ArrowUpTrayIcon className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+                <ArrowDownTrayIcon className="h-10 w-10 text-gray-400 mx-auto mb-4" />
                 <label className="cursor-pointer">
                   <span className="text-primary-600 hover:text-primary-500 font-medium">
                     ជ្រើសរើសឯកសារ
@@ -439,10 +461,10 @@ export default function StudentManagement() {
               <div className="text-sm text-gray-500">
                 <p className="font-medium mb-1">ជួរឈរ CSV ដែលតម្រូវឲ្យមាន៖</p>
                 <code className="text-xs bg-gray-100 p-2 rounded block whitespace-pre-wrap">
-                  email,password,firstName,lastName,studentId,class,department
+                  first_name, last_name, Latin, sex, dob, phone, email
                 </code>
                 <p className="text-xs text-gray-400 mt-2">
-                  ចំណាំ៖ email, password, firstName, lastName ជាកន្លែងដែលតម្រូវឲ្យបំពេញ។
+                  ចំណាំ៖ email, first_name, last_name, Latin, sex, dob, phone គួរតែត្រូវបានបំពេញក្នុងឯកសារ CSV របស់អ្នក (password, class, department ជាជម្រើសបន្ថែម)។
                 </p>
               </div>
             </div>
@@ -458,14 +480,15 @@ export default function StudentManagement() {
               </button>
               <button
                 onClick={handleImport}
-                disabled={!selectedFile || importMutation.isPending}
+                disabled={importMutation.isPending}
                 className="flex-1 btn-primary"
               >
                 {importMutation.isPending ? 'កំពុងនាំចូល...' : 'នាំចូល'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}

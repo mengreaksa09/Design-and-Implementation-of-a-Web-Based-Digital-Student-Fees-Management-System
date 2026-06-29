@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
@@ -8,10 +9,12 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   CheckIcon,
   XMarkIcon,
   EyeIcon,
   PlusIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 export default function PaymentManagement() {
@@ -187,7 +190,7 @@ export default function PaymentManagement() {
     } else if (confirmModal.type === 'reject' && value) {
       rejectMutation.mutate({ id: confirmModal.paymentId, reason: value });
     }
-    setConfirmModal({ isOpen: false, type: '', paymentId: null, reason: '' });
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
   };
 
   const handleRecordPayment = () => {
@@ -265,15 +268,23 @@ export default function PaymentManagement() {
       failed: 'badge badge-danger',
       refunded: 'badge bg-gray-100 text-gray-700',
     };
-    return <span className={styles[status] || 'badge'}>{status}</span>;
+    const labels = {
+      completed: 'បានបញ្ចប់',
+      pending: 'កំពុងរង់ចាំ',
+      failed: 'បរាជ័យ',
+      refunded: 'បានបង្វិលសង',
+    };
+    return <span className={styles[status] || 'badge'}>{labels[status] || status}</span>;
   };
 
   const getMethodBadge = (method) => {
     const styles = {
-      online: 'bg-blue-100 text-blue-700',
       cash: 'bg-green-100 text-green-700',
       bank_transfer: 'bg-purple-100 text-purple-700',
-      cheque: 'bg-gray-100 text-gray-700',
+    };
+    const labels = {
+      cash: 'សាច់ប្រាក់',
+      bank_transfer: 'ផ្ទេរតាមធនាគារ',
     };
     return (
       <span
@@ -281,7 +292,7 @@ export default function PaymentManagement() {
           styles[method] || ''
         }`}
       >
-        {method?.replace('_', ' ')}
+        {labels[method] || method?.replace('_', ' ')}
       </span>
     );
   };
@@ -292,10 +303,10 @@ export default function PaymentManagement() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Payment Management
+            ការគ្រប់គ្រងការទូទាត់ (Payment Management)
           </h1>
           <p className="text-gray-600">
-            View and manage all payment transactions
+            បង្ហាញ និងគ្រប់គ្រងប្រតិបត្តិការទូទាត់ទាំងអស់
           </p>
         </div>
         <div className="flex gap-2">
@@ -304,14 +315,14 @@ export default function PaymentManagement() {
             className="btn-primary flex items-center gap-2"
           >
             <PlusIcon className="h-5 w-5" />
-            Record Payment
+            កត់ត្រាការទូទាត់
           </button>
           <button
             onClick={exportPayments}
             className="btn-secondary flex items-center gap-2"
           >
-            <ArrowDownTrayIcon className="h-5 w-5" />
-            Export to Excel
+            <ArrowUpTrayIcon className="h-5 w-5" />
+            នាំចេញទៅ Excel
           </button>
         </div>
       </div>
@@ -319,25 +330,25 @@ export default function PaymentManagement() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="card">
-          <p className="text-sm text-gray-600">Total Transactions</p>
+          <p className="text-sm text-gray-600">ប្រតិបត្តិការសរុប</p>
           <p className="text-2xl font-bold text-gray-900">
             {data?.summary?.total || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Completed</p>
+          <p className="text-sm text-gray-600">បានបញ្ចប់</p>
           <p className="text-2xl font-bold text-green-600">
             {data?.summary?.completed || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Pending Approval</p>
+          <p className="text-sm text-gray-600">កំពុងរង់ចាំការអនុម័ត</p>
           <p className="text-2xl font-bold text-yellow-600">
             {data?.summary?.pending || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Total Amount</p>
+          <p className="text-sm text-gray-600">ទឹកប្រាក់សរុប</p>
           <p className="text-2xl font-bold text-primary-600">
             {formatCurrency(data?.summary?.totalAmount || 0)}
           </p>
@@ -351,7 +362,7 @@ export default function PaymentManagement() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by student name or transaction ID..."
+              placeholder="ស្វែងរកតាមឈ្មោះនិស្សិត ឬលេខប្រតិបត្តិការ..."
               className="input pl-10 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -362,78 +373,82 @@ export default function PaymentManagement() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
+            <option value="">ស្ថានភាពទាំងអស់</option>
+            <option value="completed">បានបញ្ចប់</option>
+            <option value="pending">កំពុងរង់ចាំ</option>
+            <option value="failed">បរាជ័យ</option>
+            <option value="refunded">បានបង្វិលត្រឡប់មកវិញ</option>
           </select>
           <select
             className="input w-auto"
             value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
           >
-            <option value="">All Methods</option>
-            <option value="online">Online</option>
-            <option value="cash">Cash</option>
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="cheque">Cheque</option>
+            <option value="">វិធីសាស្ត្រទាំងអស់</option>
+            <option value="cash">សាច់ប្រាក់</option>
+            <option value="bank_transfer">ផ្ទេរតាមធនាគារ</option>
           </select>
         </div>
       </div>
 
-      {/* Payments Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Transaction ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fee Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Method
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    </div>
-                  </td>
+      {/* Payments Table / Empty State */}
+      {isLoading ? (
+        <div className="card p-12 flex justify-center items-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
+      ) : !data?.payments || data.payments.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[300px] shadow-sm">
+          <div className="bg-green-50 p-4 rounded-full text-green-500 mb-4">
+            <BanknotesIcon className="h-12 w-12" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">
+            មិនទាន់មានការទូទាត់ទេ
+          </h3>
+          <p className="text-gray-500 max-w-sm mb-4">
+            សូមចុចប៊ូតុងខាងក្រោម ឬប៊ូតុងខាងលើ ដើម្បីកត់ត្រាការទូទាត់ថ្មីដំបូងរបស់អ្នក។
+          </p>
+          <button
+            onClick={() => setShowPaymentModal(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusIcon className="h-5 w-5" />
+            កត់ត្រាការទូទាត់
+          </button>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    លេខប្រតិបត្តិការ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ឈ្មោះនិស្សិត
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ប្រភេទការបង់ថ្លៃ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ចំនួនទឹកប្រាក់
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    វិធីសាស្ត្រ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    កាលបរិច្ឆេទ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ស្ថានភាព
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    សកម្មភាព
+                  </th>
                 </tr>
-              ) : data?.payments?.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="8"
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    No payments found
-                  </td>
-                </tr>
-              ) : (
-                data?.payments?.map((payment) => (
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data?.payments?.map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
                       {payment.receiptNumber || 'N/A'}
@@ -506,20 +521,20 @@ export default function PaymentManagement() {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Payment Details Modal */}
-      {showReceiptModal && selectedPayment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg">
+      {showReceiptModal && selectedPayment && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold text-gray-900">
-                Payment Details
+                ព័ត៌មានលម្អិតនៃការទូទាត់
               </h2>
               <button
                 onClick={() => setShowReceiptModal(false)}
@@ -529,58 +544,67 @@ export default function PaymentManagement() {
               </button>
             </div>
 
+            {/* ព័ត៌មានលម្អិតនៃការទូទាត់ */}
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Transaction ID</p>
+                  <p className="text-sm text-gray-500">លេខប្រតិបត្តិការ:</p>
                   <p className="font-mono font-medium">
-                    {selectedPayment.transactionId}
+                    {selectedPayment.receiptNumber || 'N/A'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-sm text-gray-500">ស្ថានភាព:</p>
                   {getStatusBadge(selectedPayment.status)}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Student</p>
+                  <p className="text-sm text-gray-500">ឈ្មោះនិស្សិត:</p>
                   <p className="font-medium">
-                    {selectedPayment.Student?.firstName}{' '}
-                    {selectedPayment.Student?.lastName}
+                    {selectedPayment.student?.user?.firstName}{' '}
+                    {selectedPayment.student?.user?.lastName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Student ID</p>
+                  <p className="text-sm text-gray-500">អត្តសញ្ញាណនិស្សិត:</p>
                   <p className="font-medium">
-                    {selectedPayment.Student?.studentId}
+                    {selectedPayment.student?.studentId}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Amount</p>
+                  <p className="text-sm text-gray-500">ចំនួនទឹកប្រាក់:</p>
                   <p className="text-xl font-bold text-primary-600">
                     {formatCurrency(selectedPayment.amount)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Payment Method</p>
+                  <p className="text-sm text-gray-500">វិធីសាស្ត្រទូទាត់:</p>
                   {getMethodBadge(selectedPayment.paymentMethod)}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Date</p>
+                  <p className="text-sm text-gray-500">កាលបរិច្ឆេទ:</p>
                   <p className="font-medium">
                     {formatDate(selectedPayment.createdAt)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Fee Type</p>
+                  <p className="text-sm text-gray-500">ប្រភេទការបង់ថ្លៃ:</p>
                   <p className="font-medium">
-                    {selectedPayment.FeeAssignment?.FeeStructure?.name || 'N/A'}
+                    {selectedPayment.feeAssignment?.feeStructure?.name || 'N/A'}
                   </p>
                 </div>
+                {selectedPayment.transaction?.transactionId && (
+                  <div>
+                    <p className="text-sm text-gray-500">លេខសម្គាល់ប្រតិបត្តិការ:</p>
+                    <p className="font-mono font-medium text-sm text-primary-600">
+                      {selectedPayment.transaction.transactionId}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {selectedPayment.stripePaymentIntentId && (
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500">Stripe Payment Intent</p>
+                  <p className="text-sm text-gray-500">ការទូទាត់តាម Stripe (Stripe Payment Intent)</p>
                   <p className="font-mono text-sm">
                     {selectedPayment.stripePaymentIntentId}
                   </p>
@@ -589,7 +613,7 @@ export default function PaymentManagement() {
 
               {selectedPayment.notes && (
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500">Notes</p>
+                  <p className="text-sm text-gray-500">កំណត់សម្គាល់ (Notes)</p>
                   <p className="text-gray-700">{selectedPayment.notes}</p>
                 </div>
               )}
@@ -600,7 +624,7 @@ export default function PaymentManagement() {
                 onClick={() => setShowReceiptModal(false)}
                 className="btn-secondary"
               >
-                Close
+                បិទ
               </button>
               {selectedPayment.status === 'completed' && (
                 <button
@@ -608,39 +632,39 @@ export default function PaymentManagement() {
                   className="btn-primary flex items-center gap-2"
                 >
                   <ArrowDownTrayIcon className="h-5 w-5" />
-                  Download Receipt
+                  ទាញយកបង្កាន់ដៃ
                 </button>
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Approve/Reject Confirmation Modal */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         onClose={() =>
-          setConfirmModal({
+          setConfirmModal((prev) => ({
+            ...prev,
             isOpen: false,
-            type: '',
-            paymentId: null,
-            reason: '',
-          })
+          }))
         }
         onConfirm={confirmAction}
         title={
-          confirmModal.type === 'approve' ? 'Approve Payment' : 'Reject Payment'
+          confirmModal.type === 'approve' ? 'អនុម័តការទូទាត់' : 'បដិសេធការទូទាត់'
         }
         message={
           confirmModal.type === 'approve'
-            ? 'Are you sure you want to approve this payment?'
-            : 'Please enter a reason for rejecting this payment.'
+            ? 'តើអ្នកពិតជាចង់អនុម័តការទូទាត់នេះមែនទេ?'
+            : 'សូមបញ្ចូលមូលហេតុនៃការបដិសេធការទូទាត់នេះ។'
         }
-        confirmText={confirmModal.type === 'approve' ? 'Approve' : 'Reject'}
+        confirmText={confirmModal.type === 'approve' ? 'អនុម័ត' : 'បដិសេធ'}
+        cancelText="បោះបង់"
         type={confirmModal.type === 'approve' ? 'success' : 'danger'}
         showInput={confirmModal.type === 'reject'}
-        inputLabel="Rejection Reason"
-        inputPlaceholder="Enter reason for rejection..."
+        inputLabel="មូលហេតុនៃការបដិសេធ"
+        inputPlaceholder="បញ្ចូលមូលហេតុនៃការបដិសេធ..."
         inputValue={confirmModal.reason}
         onInputChange={(value) =>
           setConfirmModal({ ...confirmModal, reason: value })
@@ -649,16 +673,16 @@ export default function PaymentManagement() {
       />
 
       {/* Record Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" style={{ margin: 0 }}>
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {showPaymentModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4" style={{ margin: 0 }}>
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  Record Payment
+                  កត់ត្រាការទូទាត់ (Record Payment)
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Record a new payment for a student's fee
+                  កត់ត្រាការទូទាត់ថ្មីសម្រាប់ថ្លៃសិក្សារបស់និស្សិត
                 </p>
               </div>
               <button
@@ -670,7 +694,7 @@ export default function PaymentManagement() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="label">Student *</label>
+                <label className="label">ឈ្មោះនិស្សិត *</label>
                 <select
                   className="input"
                   value={paymentForm.studentId}
@@ -678,7 +702,7 @@ export default function PaymentManagement() {
                   required
                 >
                   <option value="" disabled>
-                    Select Student
+                    ជ្រើសរើសនិស្សិត
                   </option>
                   {studentsData?.map((student) => (
                     <option key={student.id} value={student.id}>
@@ -691,7 +715,7 @@ export default function PaymentManagement() {
 
               {paymentForm.studentId && (
                 <div>
-                  <label className="label">Fee Assignment *</label>
+                  <label className="label">ការកំណត់ការបង់ថ្លៃ *</label>
                   <select
                     className="input"
                     value={paymentForm.feeAssignmentId}
@@ -699,7 +723,7 @@ export default function PaymentManagement() {
                     required
                   >
                     <option value="" disabled>
-                      Select Fee
+                      ជ្រើសរើសការបង់ថ្លៃ
                     </option>
                     {feeAssignments?.map((fa) => (
                       <option key={fa.id} value={fa.id}>
@@ -710,14 +734,14 @@ export default function PaymentManagement() {
                   </select>
                   {feeAssignments?.length === 0 && (
                     <p className="text-sm text-yellow-600 mt-1">
-                      No outstanding fees for this student
+                      គ្មានការបង់ថ្លៃដែលនៅសេសសល់សម្រាប់និស្សិតនេះទេ
                     </p>
                   )}
                 </div>
               )}
 
               <div>
-                <label className="label">Amount (USD) *</label>
+                <label className="label">ចំនួនទឹកប្រាក់ *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                     $
@@ -741,7 +765,7 @@ export default function PaymentManagement() {
               </div>
 
               <div>
-                <label className="label">Payment Method *</label>
+                <label className="label">វិធីសាស្ត្រទូទាត់ *</label>
                 <select
                   className="input"
                   value={paymentForm.paymentMethod}
@@ -754,17 +778,15 @@ export default function PaymentManagement() {
                   required
                 >
                   <option value="" disabled>
-                    Select Payment Method
+                    ជ្រើសរើសវិធីសាស្ត្រទូទាត់
                   </option>
-                  <option value="cash">Cash</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="cheque">Cheque</option>
-                  <option value="online">Online</option>
+                  <option value="cash">សាច់ប្រាក់</option>
+                  <option value="bank_transfer">ផ្ទេរតាមធនាគារ</option>
                 </select>
               </div>
 
               <div>
-                <label className="label">Payment Date *</label>
+                <label className="label">កាលបរិច្ឆេទអនុវត្ត *</label>
                 <input
                   type="date"
                   className="input"
@@ -780,7 +802,7 @@ export default function PaymentManagement() {
               </div>
 
               <div>
-                <label className="label">Notes (Optional)</label>
+                <label className="label">កំណត់សម្គាល់</label>
                 <textarea
                   className="input"
                   rows="3"
@@ -788,7 +810,7 @@ export default function PaymentManagement() {
                   onChange={(e) =>
                     setPaymentForm({ ...paymentForm, notes: e.target.value })
                   }
-                  placeholder="Add any additional notes..."
+                  placeholder="បន្ថែមការកំណត់សម្គាល់..."
                 />
               </div>
             </div>
@@ -808,7 +830,7 @@ export default function PaymentManagement() {
                 className="btn-secondary"
                 disabled={recordPaymentMutation.isPending}
               >
-                Cancel
+                បោះបង់
               </button>
               <button
                 onClick={handleRecordPayment}
@@ -816,12 +838,13 @@ export default function PaymentManagement() {
                 disabled={recordPaymentMutation.isPending}
               >
                 {recordPaymentMutation.isPending
-                  ? 'Recording...'
-                  : 'Record Payment'}
+                  ? 'កំពុងកត់ត្រា...'
+                  : 'កត់ត្រាការទូទាត់'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -29,6 +29,9 @@ module.exports = (sequelize, DataTypes) => {
       email: {
         type: DataTypes.STRING,
         allowNull: true,
+        set(value) {
+          this.setDataValue('email', value === '' ? null : value);
+        },
         validate: {
           isEmail: true,
         },

@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import {
-  ArrowDownTrayIcon,
-  DocumentArrowDownIcon,
+  ArrowUpTrayIcon,
+  DocumentArrowUpIcon,
   CalendarDaysIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
@@ -113,9 +113,9 @@ export default function Reports() {
       link.click();
       link.remove();
 
-      toast.success(`${format.toUpperCase()} report downloaded`);
+      toast.success(`បានទាញយករបាយការណ៍ ${format.toUpperCase()} រួចរាល់`);
     } catch (error) {
-      toast.error('Failed to export report');
+      toast.error('ការនាំចេញរបាយការណ៍បានបរាជ័យ');
     }
   };
 
@@ -124,7 +124,7 @@ export default function Reports() {
     labels: reportData?.chartLabels || [],
     datasets: [
       {
-        label: 'Collections',
+        label: 'ការប្រមូលប្រាក់',
         data: reportData?.chartData || [],
         backgroundColor: 'rgba(79, 70, 229, 0.8)',
         borderRadius: 8,
@@ -154,23 +154,23 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-600">Generate and export financial reports</p>
+          <h1 className="text-2xl font-bold text-gray-900">របាយការណ៍</h1>
+          <p className="text-gray-600">បង្កើត និងនាំចេញរបាយការណ៍ហិរញ្ញវត្ថុ</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => exportReport('excel')}
             className="btn-secondary flex items-center gap-2"
           >
-            <ArrowDownTrayIcon className="h-5 w-5" />
-            Export Excel
+            <ArrowUpTrayIcon className="h-5 w-5" />
+            នាំចេញជា Excel
           </button>
           <button
             onClick={() => exportReport('pdf')}
             className="btn-primary flex items-center gap-2"
           >
-            <DocumentArrowDownIcon className="h-5 w-5" />
-            Export PDF
+            <DocumentArrowUpIcon className="h-5 w-5" />
+            នាំចេញជា PDF
           </button>
         </div>
       </div>
@@ -179,12 +179,12 @@ export default function Reports() {
       <div className="card">
         <div className="flex flex-wrap gap-2 mb-6">
           {[
-            { id: 'daily', label: 'Daily Report', icon: CalendarDaysIcon },
-            { id: 'monthly', label: 'Monthly Report', icon: CalendarDaysIcon },
-            { id: 'yearly', label: 'Yearly Report', icon: ChartBarIcon },
+            { id: 'daily', label: 'របាយការណ៍ប្រចាំថ្ងៃ', icon: CalendarDaysIcon },
+            { id: 'monthly', label: 'របាយការណ៍ប្រចាំខែ', icon: CalendarDaysIcon },
+            { id: 'yearly', label: 'របាយការណ៍ប្រចាំឆ្នាំ', icon: ChartBarIcon },
             {
               id: 'collection',
-              label: 'Collection Report',
+              label: 'របាយការណ៍ការប្រមូលប្រាក់',
               icon: ChartBarIcon,
             },
           ].map((tab) => (
@@ -207,7 +207,7 @@ export default function Reports() {
         <div className="flex flex-wrap gap-4 pb-6 border-b">
           {reportType === 'daily' && (
             <div>
-              <label className="label">Select Date</label>
+              <label className="label">ជ្រើសរើសកាលបរិច្ឆេទ</label>
               <input
                 type="date"
                 className="input"
@@ -222,25 +222,25 @@ export default function Reports() {
           {reportType === 'monthly' && (
             <>
               <div>
-                <label className="label">Month</label>
+                <label className="label">ខែ</label>
                 <select
                   className="input"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
                 >
                   {[
-                    'January',
-                    'February',
-                    'March',
-                    'April',
-                    'May',
-                    'June',
-                    'July',
-                    'August',
-                    'September',
-                    'October',
-                    'November',
-                    'December',
+                    'មករា',
+                    'កុម្ភៈ',
+                    'មីនា',
+                    'មេសា',
+                    'ឧសភា',
+                    'មិថុនា',
+                    'កក្កដា',
+                    'សីហា',
+                    'កញ្ញា',
+                    'តុលា',
+                    'វិច្ឆិកា',
+                    'ធ្នូ',
                   ].map((month, index) => (
                     <option key={index} value={index + 1}>
                       {month}
@@ -249,13 +249,13 @@ export default function Reports() {
                 </select>
               </div>
               <div>
-                <label className="label">Year</label>
+                <label className="label">ឆ្នាំ</label>
                 <select
                   className="input"
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                 >
-                  {[2024, 2023, 2022, 2021].map((year) => (
+                  {[2026, 2025, 2024, 2023, 2022, 2021].map((year) => (
                     <option key={year} value={year}>
                       {year}
                     </option>
@@ -267,13 +267,13 @@ export default function Reports() {
 
           {reportType === 'yearly' && (
             <div>
-              <label className="label">Year</label>
+              <label className="label">ឆ្នាំ</label>
               <select
                 className="input"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
               >
-                {[2024, 2023, 2022, 2021].map((year) => (
+                {[2026, 2025, 2024, 2023, 2022, 2021].map((year) => (
                   <option key={year} value={year}>
                     {year}
                   </option>
@@ -285,7 +285,7 @@ export default function Reports() {
           {reportType === 'collection' && (
             <>
               <div>
-                <label className="label">Start Date</label>
+                <label className="label">ថ្ងៃចាប់ផ្តើម</label>
                 <input
                   type="date"
                   className="input"
@@ -296,7 +296,7 @@ export default function Reports() {
                 />
               </div>
               <div>
-                <label className="label">End Date</label>
+                <label className="label">ថ្ងៃបញ្ចប់</label>
                 <input
                   type="date"
                   className="input"
@@ -310,7 +310,7 @@ export default function Reports() {
           )}
 
           <button onClick={() => refetch()} className="btn-primary self-end">
-            Generate Report
+            បង្កើតរបាយការណ៍
           </button>
         </div>
 
@@ -324,25 +324,25 @@ export default function Reports() {
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-600">Total Collected</p>
+                <p className="text-sm text-blue-600">ប្រមូលបានសរុប</p>
                 <p className="text-2xl font-bold text-blue-900">
                   {formatCurrency(reportData?.totalCollected || 0)}
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-600">Transactions</p>
+                <p className="text-sm text-green-600">ប្រតិបត្តិការ</p>
                 <p className="text-2xl font-bold text-green-900">
                   {reportData?.transactionCount || 0}
                 </p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg">
-                <p className="text-sm text-purple-600">Students Paid</p>
+                <p className="text-sm text-purple-600">និស្សិតបានបង់ប្រាក់</p>
                 <p className="text-2xl font-bold text-purple-900">
                   {reportData?.studentsPaid || 0}
                 </p>
               </div>
               <div className="p-4 bg-orange-50 rounded-lg">
-                <p className="text-sm text-orange-600">Average Payment</p>
+                <p className="text-sm text-orange-600">ការបង់ប្រាក់ជាមធ្យម</p>
                 <p className="text-2xl font-bold text-orange-900">
                   {formatCurrency(reportData?.averagePayment || 0)}
                 </p>
@@ -358,40 +358,43 @@ export default function Reports() {
               </div>
             )}
 
-            {/* Transactions Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Student
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Fee Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Method
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {reportData?.transactions?.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="5"
-                        className="px-4 py-8 text-center text-gray-500"
-                      >
-                        No transactions found for this period
-                      </td>
+            {/* Transactions Table / Empty State */}
+            {!reportData?.transactions || reportData.transactions.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-150 p-12 text-center flex flex-col items-center justify-center min-h-[250px] shadow-sm">
+                <div className="bg-purple-50 p-4 rounded-full text-purple-500 mb-4">
+                  <ChartBarIcon className="h-12 w-12" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  មិនទាន់មានប្រតិបត្តិការទេ
+                </h3>
+                <p className="text-gray-500 max-w-sm">
+                  មិនមានកំណត់ត្រាប្រតិបត្តិការហិរញ្ញវត្ថុណាមួយ សម្រាប់អំឡុងពេល ឬលក្ខខណ្ឌដែលអ្នកបានជ្រើសរើសឡើយ។
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        កាលបរិច្ឆេទ
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        ឈ្មោះនិស្សិត
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        ប្រភេទថ្លៃសិក្សា
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        វិធីសាស្ត្រ
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                        ចំនួនទឹកប្រាក់
+                      </th>
                     </tr>
-                  ) : (
-                    reportData?.transactions?.map((txn, index) => (
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {reportData?.transactions?.map((txn, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {formatDate(txn.date)}
@@ -403,32 +406,32 @@ export default function Reports() {
                           {txn.feeType}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-500">
-                          {txn.method}
+                          {txn.method === 'cash' ? 'សាច់ប្រាក់' : txn.method === 'bank_transfer' ? 'ផ្ទេរតាមធនាគារ' : txn.method}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                           {formatCurrency(txn.amount)}
                         </td>
                       </tr>
-                    ))
+                    ))}
+                  </tbody>
+                  {reportData?.transactions?.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-gray-50">
+                        <td
+                          colSpan="4"
+                          className="px-4 py-3 text-sm font-semibold text-gray-900"
+                        >
+                          សរុប
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                          {formatCurrency(reportData?.totalCollected || 0)}
+                        </td>
+                      </tr>
+                    </tfoot>
                   )}
-                </tbody>
-                {reportData?.transactions?.length > 0 && (
-                  <tfoot>
-                    <tr className="bg-gray-50">
-                      <td
-                        colSpan="4"
-                        className="px-4 py-3 text-sm font-semibold text-gray-900"
-                      >
-                        Total
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                        {formatCurrency(reportData?.totalCollected || 0)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

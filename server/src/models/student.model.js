@@ -20,6 +20,19 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
+      Student_ID: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      Full_Name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      Telegram_Chat_ID: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       dateOfBirth: {
         type: DataTypes.DATEONLY,
         allowNull: true,
@@ -105,6 +118,24 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: 'students',
       timestamps: true,
+      hooks: {
+        beforeSave: async (student) => {
+          // Sync Student_ID with studentId
+          if (student.studentId) {
+            student.Student_ID = student.studentId;
+          }
+          // Sync Telegram_Chat_ID with telegramChatId
+          if (student.telegramChatId) {
+            student.Telegram_Chat_ID = student.telegramChatId;
+          }
+          // Sync Full_Name from passed names or existing fields
+          if (student.firstName || student.lastName) {
+            student.Full_Name = `${student.lastName || ''} ${student.firstName || ''}`.trim();
+          } else if (!student.Full_Name) {
+            student.Full_Name = 'ចាន់ សុខ'; // default fallback for seeded student
+          }
+        }
+      },
       indexes: [
         { fields: ['studentId'] },
         { fields: ['class'] },

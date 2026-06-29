@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, isOverdue } from '../../utils/helpers';
 import { useAuthStore } from '../../store/authStore';
 import {
   CurrencyDollarIcon,
@@ -25,25 +25,25 @@ export default function StudentDashboard() {
 
   const stats = [
     {
-      name: 'ថ្លៃសិក្សាសរុប (Total Fees)',
+      name: 'ថ្លៃសិក្សាសរុប',
       value: formatCurrency(dashboardData?.totalFees || 0),
       icon: CurrencyDollarIcon,
       color: 'bg-blue-500',
     },
     {
-      name: 'ទឹកប្រាក់បានបង់ (Paid Amount)',
+      name: 'ទឹកប្រាក់បានបង់',
       value: formatCurrency(dashboardData?.paidAmount || 0),
       icon: CheckCircleIcon,
       color: 'bg-green-500',
     },
     {
-      name: 'ទឹកប្រាក់រង់ចាំបង់ (Pending Amount)',
+      name: 'ទឹកប្រាក់រង់ចាំបង់',
       value: formatCurrency(dashboardData?.pendingAmount || 0),
       icon: ClockIcon,
       color: 'bg-yellow-500',
     },
     {
-      name: 'ទឹកប្រាក់ហួសកាលកំណត់ (Overdue Amount)',
+      name: 'ទឹកប្រាក់ហួសកាលកំណត់',
       value: formatCurrency(dashboardData?.overdueAmount || 0),
       icon: ExclamationTriangleIcon,
       color: 'bg-red-500',
@@ -125,7 +125,7 @@ export default function StudentDashboard() {
                 <div
                   key={fee.id}
                   className={`flex items-center justify-between p-4 rounded-lg border ${
-                    new Date(fee.dueDate) < new Date()
+                    isOverdue(fee.dueDate)
                       ? 'border-red-200 bg-red-50'
                       : 'border-gray-200'
                   }`}
@@ -135,7 +135,7 @@ export default function StudentDashboard() {
                       <h4 className="font-medium text-gray-900">
                         {fee.FeeStructure?.name}
                       </h4>
-                      {new Date(fee.dueDate) < new Date() && (
+                      {isOverdue(fee.dueDate) && (
                         <span className="badge badge-danger">ហួសកាលកំណត់</span>
                       )}
                     </div>

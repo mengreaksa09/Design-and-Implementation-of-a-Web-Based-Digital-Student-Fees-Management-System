@@ -9,7 +9,7 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 import api from '../../utils/api';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, isOverdue } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 import {
   CreditCardIcon,
@@ -120,7 +120,7 @@ function PaymentForm({ fee, onSuccess }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Payment Amount */}
       <div>
-        <label className="label">Payment Amount</label>
+        <label className="label">ចំនួនទឹកប្រាក់ទូទាត់</label>
         <div className="flex gap-4 mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -131,7 +131,7 @@ function PaymentForm({ fee, onSuccess }) {
               onChange={() => setPaymentType('full')}
               className="text-primary-600"
             />
-            <span>Full Amount ({formatCurrency(balance)})</span>
+            <span>ចំនួនពេញ ({formatCurrency(balance)})</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -142,7 +142,7 @@ function PaymentForm({ fee, onSuccess }) {
               onChange={() => setPaymentType('partial')}
               className="text-primary-600"
             />
-            <span>Partial Payment</span>
+            <span>ការទូទាត់មួយផ្នែក</span>
           </label>
         </div>
         {paymentType === 'partial' && (
@@ -158,7 +158,7 @@ function PaymentForm({ fee, onSuccess }) {
               className="input pl-8"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
-              placeholder="Enter amount"
+              placeholder="បញ្ចូលចំនួនទឹកប្រាក់..."
             />
           </div>
         )}
@@ -166,13 +166,13 @@ function PaymentForm({ fee, onSuccess }) {
 
       {/* Card Details */}
       <div>
-        <label className="label">Card Details</label>
+        <label className="label">ព័ត៌មានលម្អិតអំពីកាត</label>
         <div className="border rounded-lg p-4 bg-gray-50">
           <CardElement options={cardElementOptions} />
         </div>
         <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
           <LockClosedIcon className="h-4 w-4" />
-          Your payment is secured with SSL encryption
+          ការទូទាត់របស់អ្នកត្រូវបានការពារដោយប្រព័ន្ធកូដនីយកម្ម SSL
         </p>
       </div>
 
@@ -185,20 +185,20 @@ function PaymentForm({ fee, onSuccess }) {
         {isProcessing ? (
           <>
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            Processing...
+            កំពុងដំណើរការ...
           </>
         ) : (
           <>
             <CreditCardIcon className="h-6 w-6" />
-            Pay {formatCurrency(parseFloat(paymentAmount) || 0)}
+            ទូទាត់ {formatCurrency(parseFloat(paymentAmount) || 0)}
           </>
         )}
       </button>
 
       {/* Test Card Info */}
       <div className="text-center text-sm text-gray-500">
-        <p>Test card: 4242 4242 4242 4242</p>
-        <p>Any future date, any CVC, any ZIP</p>
+        <p>កាតសាកល្បង (Test card): 4242 4242 4242 4242</p>
+        <p>កាលបរិច្ឆេទអនាគតណាមួយ CVC ណាមួយ និងកូដតំបន់ណាមួយ</p>
       </div>
     </form>
   );
@@ -237,18 +237,17 @@ export default function MakePayment() {
             <CheckCircleIcon className="h-10 w-10 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Payment Successful!
+            ការទូទាត់ទទួលបានជោគជ័យ!
           </h2>
           <p className="text-gray-600 mb-6">
-            Your payment has been processed successfully. A receipt has been
-            sent to your email.
+            ការទូទាត់របស់អ្នកត្រូវបានដំណើរការដោយជោគជ័យ។ បង្កាន់ដៃត្រូវបានផ្ញើទៅកាន់អ៊ីមែលរបស់អ្នក។
           </p>
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => navigate('/student/history')}
+              onClick={() => navigate('/student/payments')}
               className="btn-secondary"
             >
-              View History
+              មើលប្រវត្តិ
             </button>
             <button
               onClick={() => {
@@ -257,7 +256,7 @@ export default function MakePayment() {
               }}
               className="btn-primary"
             >
-              Make Another Payment
+              ទូទាត់ម្តងទៀត
             </button>
           </div>
         </div>
@@ -268,27 +267,27 @@ export default function MakePayment() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Make Payment</h1>
-        <p className="text-gray-600">Pay your fees securely online</p>
+        <h1 className="text-2xl font-bold text-gray-900">ធ្វើការទូទាត់</h1>
+        <p className="text-gray-600">បង់ថ្លៃសិក្សារបស់អ្នកដោយសុវត្ថិភាពតាមអនឡាញ</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fee Selection */}
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Select Fee to Pay
+            ជ្រើសរើសថ្លៃសិក្សាត្រូវបង់
           </h3>
 
           {fees?.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircleIcon className="h-12 w-12 text-green-500 mx-auto mb-3" />
-              <p className="text-gray-600">All fees are paid! 🎉</p>
+              <p className="text-gray-600">រាល់ថ្លៃសិក្សាទាំងអស់ត្រូវបានបង់រួចរាល់! 🎉</p>
             </div>
           ) : (
             <div className="space-y-3">
               {fees?.map((fee) => {
                 const balance = fee.amount - (fee.paidAmount || 0);
-                const isPastDue = new Date(fee.dueDate) < new Date();
+                const isPastDue = isOverdue(fee.dueDate);
 
                 return (
                   <label
@@ -314,15 +313,15 @@ export default function MakePayment() {
                             {fee.FeeStructure?.name}
                           </h4>
                           {isPastDue && (
-                            <span className="badge badge-danger">Overdue</span>
+                            <span className="badge badge-danger">ហួសកាលកំណត់</span>
                           )}
                         </div>
                         <p className="text-sm text-gray-500">
-                          Due: {formatDate(fee.dueDate)}
+                          កាលបរិច្ឆេទកំណត់: {formatDate(fee.dueDate)}
                         </p>
                         <div className="mt-2 flex justify-between">
                           <span className="text-sm text-gray-600">
-                            Balance Due:
+                            សមតុល្យត្រូវបង់:
                           </span>
                           <span className="font-semibold text-gray-900">
                             {formatCurrency(balance)}
@@ -340,31 +339,31 @@ export default function MakePayment() {
         {/* Payment Form */}
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Payment Details
+            ព័ត៌មានលម្អិតនៃការទូទាត់
           </h3>
 
           {!selectedFee ? (
             <div className="text-center py-12 text-gray-500">
               <CreditCardIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-              <p>Select a fee from the left to proceed with payment</p>
+              <p>ជ្រើសរើសថ្លៃសិក្សាពីខាងឆ្វេងដើម្បីបន្តការទូទាត់</p>
             </div>
           ) : (
             <>
               {/* Selected Fee Summary */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Fee Type:</span>
+                  <span className="text-gray-600">ប្រភេទការបង់ថ្លៃ:</span>
                   <span className="font-medium">
                     {selectedFee.FeeStructure?.name}
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Original Amount:</span>
+                  <span className="text-gray-600">ចំនួនទឹកប្រាក់ដើម:</span>
                   <span>{formatCurrency(selectedFee.amount)}</span>
                 </div>
                 {selectedFee.paidAmount > 0 && (
                   <div className="flex justify-between mb-2">
-                    <span className="text-gray-600">Already Paid:</span>
+                    <span className="text-gray-600">បានបង់រួច:</span>
                     <span className="text-green-600">
                       - {formatCurrency(selectedFee.paidAmount)}
                     </span>
@@ -372,7 +371,7 @@ export default function MakePayment() {
                 )}
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-medium text-gray-900">
-                    Balance Due:
+                    សមតុល្យត្រូវបង់:
                   </span>
                   <span className="font-bold text-lg text-primary-600">
                     {formatCurrency(
@@ -398,10 +397,9 @@ export default function MakePayment() {
       <div className="mt-6 p-4 bg-gray-50 rounded-lg flex items-start gap-3">
         <LockClosedIcon className="h-5 w-5 text-gray-400 mt-0.5" />
         <div className="text-sm text-gray-600">
-          <p className="font-medium text-gray-900">Secure Payment</p>
+          <p className="font-medium text-gray-900">ការទូទាត់ដោយសុវត្ថិភាព</p>
           <p>
-            Your payment information is encrypted and processed securely through
-            Stripe. We never store your full card details on our servers.
+            ព័ត៌មានទូទាត់របស់អ្នកត្រូវបានការពារដោយការសរសេរកូដ និងដំណើរការដោយសុវត្ថិភាពតាមរយៈ Stripe។ យើងមិនដែលរក្សាទុកព័ត៌មានលម្អិតកាតរបស់អ្នកនៅលើម៉ាស៊ីនមេរបស់យើងឡើយ។
           </p>
         </div>
       </div>

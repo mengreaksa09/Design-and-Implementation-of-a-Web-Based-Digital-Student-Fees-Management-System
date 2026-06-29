@@ -12,20 +12,28 @@ if (!fs.existsSync(receiptsDir)) {
 const generateReceipt = async (paymentData) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 40, bottom: 15, left: 40, right: 40 }
+      });
       const fileName = `receipt_${paymentData.receiptNumber}.pdf`;
       const filePath = path.join(receiptsDir, fileName);
       const writeStream = fs.createWriteStream(filePath);
 
       doc.pipe(writeStream);
 
-      // Generate QR Code
-      const qrData = JSON.stringify({
-        receiptNumber: paymentData.receiptNumber,
-        amount: paymentData.amount,
-        date: paymentData.paymentDate,
-        studentId: paymentData.studentId,
-      });
+      // Generate QR Code with clear, human-readable plain text layout for standard mobile scanners
+      const qrData = `${process.env.SCHOOL_NAME || 'Example University'} - Official Payment Receipt
+---------------------------------------
+Receipt No: ${paymentData.receiptNumber}
+Student ID: ${paymentData.studentIdNumber || 'N/A'}
+Student Name: ${paymentData.studentName || 'N/A'}
+Amount: ${paymentData.currency || 'USD'} ${parseFloat(paymentData.amount).toFixed(2)}
+Date: ${new Date(paymentData.paymentDate).toLocaleDateString()}
+Status: ${(paymentData.status || 'completed').toUpperCase()}
+---------------------------------------
+Verified by Student Fees Management System`;
+
       const qrCodeDataUrl = await QRCode.toDataURL(qrData);
       const qrCodeBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
 
@@ -178,7 +186,7 @@ const generateReceipt = async (paymentData) => {
       doc.image(qrCodeBuffer, 450, yPos - 20, { width: 80 });
 
       // Footer
-      const footerY = doc.page.height - 100;
+      const footerY = doc.page.height - 120;
       doc.moveTo(50, footerY).lineTo(545, footerY).stroke('#e5e7eb');
 
       doc
@@ -187,7 +195,7 @@ const generateReceipt = async (paymentData) => {
         .text(
           'This is a computer-generated receipt and does not require a signature.',
           50,
-          footerY + 15,
+          footerY + 10,
           { align: 'center' }
         );
       doc.text(
@@ -195,13 +203,13 @@ const generateReceipt = async (paymentData) => {
           process.env.SCHOOL_PHONE || ''
         } | Email: ${process.env.SCHOOL_EMAIL || ''}`,
         50,
-        footerY + 30,
+        footerY + 22,
         { align: 'center' }
       );
       doc.text(
         `Generated on: ${new Date().toLocaleString()}`,
         50,
-        footerY + 45,
+        footerY + 34,
         { align: 'center' }
       );
 

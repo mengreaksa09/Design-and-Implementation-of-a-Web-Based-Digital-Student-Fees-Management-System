@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, isOverdue } from '../../utils/helpers';
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -19,25 +19,25 @@ export default function MyFees() {
 
   const getStatusInfo = (fee) => {
     const balance = fee.amount - (fee.paidAmount || 0);
-    const isPastDue = new Date(fee.dueDate) < new Date();
+    const isPastDue = isOverdue(fee.dueDate);
 
     if (balance <= 0) {
       return {
-        status: 'Paid',
+        status: 'បានទូទាត់',
         icon: CheckCircleIcon,
         color: 'text-green-600',
         bgColor: 'bg-green-100',
       };
     } else if (isPastDue) {
       return {
-        status: 'Overdue',
+        status: 'ហួសកាលកំណត់',
         icon: ExclamationTriangleIcon,
         color: 'text-red-600',
         bgColor: 'bg-red-100',
       };
     } else {
       return {
-        status: 'Pending',
+        status: 'រង់ចាំបង់',
         icon: ClockIcon,
         color: 'text-yellow-600',
         bgColor: 'bg-yellow-100',
@@ -46,7 +46,7 @@ export default function MyFees() {
   };
 
   const calculateLateFee = (fee) => {
-    const isPastDue = new Date(fee.dueDate) < new Date();
+    const isPastDue = isOverdue(fee.dueDate);
     if (!isPastDue || !fee.FeeStructure?.lateFeeValue) return 0;
 
     const structure = fee.FeeStructure;
@@ -75,32 +75,32 @@ export default function MyFees() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Fees</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ថ្លៃសិក្សារបស់ខ្ញុំ</h1>
           <p className="text-gray-600">
-            View all your assigned fees and payment status
+            មើលរាល់ថ្លៃសិក្សាដែលបានកំណត់ និងស្ថានភាពការទូទាត់របស់អ្នក
           </p>
         </div>
         <Link to="/student/pay" className="btn-primary">
-          Make a Payment
+          ធ្វើការទូទាត់
         </Link>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card bg-blue-50 border border-blue-200">
-          <p className="text-sm text-blue-600">Total Fees</p>
+          <p className="text-sm text-blue-600">ថ្លៃសិក្សាសរុប</p>
           <p className="text-2xl font-bold text-blue-900">
             {formatCurrency(data?.summary?.totalFees || 0)}
           </p>
         </div>
         <div className="card bg-green-50 border border-green-200">
-          <p className="text-sm text-green-600">Total Paid</p>
+          <p className="text-sm text-green-600">ទឹកប្រាក់បានបង់សរុប</p>
           <p className="text-2xl font-bold text-green-900">
             {formatCurrency(data?.summary?.totalPaid || 0)}
           </p>
         </div>
         <div className="card bg-yellow-50 border border-yellow-200">
-          <p className="text-sm text-yellow-600">Balance Due</p>
+          <p className="text-sm text-yellow-600">សមតុល្យត្រូវបង់</p>
           <p className="text-2xl font-bold text-yellow-900">
             {formatCurrency(data?.summary?.balanceDue || 0)}
           </p>
@@ -111,7 +111,7 @@ export default function MyFees() {
       {pendingFees.length > 0 && (
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Pending Fees
+            ប្រាក់រង់ចាំបង់
           </h2>
           <div className="space-y-4">
             {pendingFees.map((fee) => {
@@ -123,7 +123,7 @@ export default function MyFees() {
                 <div
                   key={fee.id}
                   className={`border rounded-lg p-4 ${
-                    statusInfo.status === 'Overdue'
+                    statusInfo.status === 'ហួសកាលកំណត់'
                       ? 'border-red-200 bg-red-50'
                       : ''
                   }`}
@@ -144,7 +144,7 @@ export default function MyFees() {
                         </p>
                         <div className="flex flex-wrap gap-4 mt-2 text-sm">
                           <span className="text-gray-600">
-                            Due:{' '}
+                            ថ្ងៃកំណត់៖{' '}
                             <span className="font-medium">
                               {formatDate(fee.dueDate)}
                             </span>
@@ -158,14 +158,14 @@ export default function MyFees() {
 
                     <div className="flex flex-col md:items-end gap-2">
                       <div className="text-right">
-                        <p className="text-sm text-gray-500">Original Amount</p>
+                        <p className="text-sm text-gray-500">ចំនួនទឹកប្រាក់ដើម</p>
                         <p className="font-medium text-gray-900">
                           {formatCurrency(fee.amount)}
                         </p>
                       </div>
                       {fee.paidAmount > 0 && (
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">Already Paid</p>
+                          <p className="text-sm text-gray-500">បានបង់រួច</p>
                           <p className="font-medium text-green-600">
                             - {formatCurrency(fee.paidAmount)}
                           </p>
@@ -173,14 +173,14 @@ export default function MyFees() {
                       )}
                       {lateFee > 0 && (
                         <div className="text-right">
-                          <p className="text-sm text-red-500">Late Fee</p>
+                          <p className="text-sm text-red-500">ថ្លៃយឺត</p>
                           <p className="font-medium text-red-600">
                             + {formatCurrency(lateFee)}
                           </p>
                         </div>
                       )}
                       <div className="text-right border-t pt-2">
-                        <p className="text-sm text-gray-500">Balance Due</p>
+                        <p className="text-sm text-gray-500">សមតុល្យត្រូវបង់</p>
                         <p className="text-xl font-bold text-gray-900">
                           {formatCurrency(balance)}
                         </p>
@@ -189,7 +189,7 @@ export default function MyFees() {
                         to={`/student/pay?feeId=${fee.id}`}
                         className="btn-primary text-sm"
                       >
-                        Pay Now
+                        បង់ឥឡូវនេះ
                       </Link>
                     </div>
                   </div>
@@ -204,23 +204,23 @@ export default function MyFees() {
       {paidFees.length > 0 && (
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Paid Fees
+            ថ្លៃសិក្សាបានបង់រួច
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50">
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Fee Type
+                    ប្រភេទថ្លៃសិក្សា
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Amount
+                    ចំនួនទឹកប្រាក់
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Due Date
+                    ថ្ងៃកំណត់បង់
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
+                    ស្ថានភាព
                   </th>
                 </tr>
               </thead>
@@ -237,7 +237,7 @@ export default function MyFees() {
                       {formatDate(fee.dueDate)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="badge badge-success">Paid</span>
+                      <span className="badge badge-success">បានទូទាត់</span>
                     </td>
                   </tr>
                 ))}
@@ -251,7 +251,7 @@ export default function MyFees() {
       {data?.fees?.length === 0 && (
         <div className="card text-center py-12">
           <p className="text-gray-500">
-            No fees have been assigned to you yet.
+            មិនទាន់មានការកំណត់ការបង់ថ្លៃណាមួយសម្រាប់អ្នកនៅឡើយទេ។
           </p>
         </div>
       )}

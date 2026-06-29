@@ -175,6 +175,7 @@ router.get('/linked-students', auth, async (req, res) => {
         'telegramUsername',
         'class',
         'department',
+        'course',
       ],
     });
 

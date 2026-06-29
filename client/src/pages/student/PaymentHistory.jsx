@@ -36,18 +36,18 @@ export default function PaymentHistory() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Receipt downloaded');
+      toast.success('បានទាញយកបង្កាន់ដៃដោយជោគជ័យ');
     } catch (error) {
-      toast.error('Failed to download receipt');
+      toast.error('ការទាញយកបង្កាន់ដៃបានបរាជ័យ');
     }
   };
 
   const getMethodLabel = (method) => {
     const labels = {
-      online: 'Online Payment',
-      cash: 'Cash',
-      bank_transfer: 'Bank Transfer',
-      cheque: 'Cheque',
+      online: 'អនឡាញ',
+      cash: 'សាច់ប្រាក់',
+      bank_transfer: 'ផ្ទេរតាមធនាគារ',
+      cheque: 'សែក',
     };
     return labels[method] || method;
   };
@@ -64,28 +64,28 @@ export default function PaymentHistory() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
+        <h1 className="text-2xl font-bold text-gray-900">ប្រវត្តិនៃការទូទាត់</h1>
         <p className="text-gray-600">
-          View all your past payments and download receipts
+          មើលប្រវត្តិនៃការទូទាត់កន្លងមករបស់អ្នក និងទាញយកបង្កាន់ដៃ
         </p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card">
-          <p className="text-sm text-gray-600">Total Payments</p>
+          <p className="text-sm text-gray-600">ការទូទាត់សរុប</p>
           <p className="text-2xl font-bold text-gray-900">
             {data?.summary?.count || 0}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">Total Amount Paid</p>
+          <p className="text-sm text-gray-600">ទឹកប្រាក់ទូទាត់សរុប</p>
           <p className="text-2xl font-bold text-green-600">
             {formatCurrency(data?.summary?.totalAmount || 0)}
           </p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-600">This Year</p>
+          <p className="text-sm text-gray-600">ឆ្នាំនេះ</p>
           <p className="text-2xl font-bold text-primary-600">
             {formatCurrency(data?.summary?.thisYear || 0)}
           </p>
@@ -99,7 +99,7 @@ export default function PaymentHistory() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by fee type or transaction ID..."
+              placeholder="ស្វែងរកតាមប្រភេទការបង់ថ្លៃ ឬលេខប្រតិបត្តិការ..."
               className="input pl-10 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -110,7 +110,7 @@ export default function PaymentHistory() {
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
           >
-            <option value="">All Years</option>
+            <option value="">ឆ្នាំទាំងអស់</option>
             <option value="2024">2024</option>
             <option value="2023">2023</option>
             <option value="2022">2022</option>
@@ -121,7 +121,7 @@ export default function PaymentHistory() {
       {/* Payments List */}
       {data?.payments?.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-500">No payment history found</p>
+          <p className="text-gray-500">មិនទាន់មានប្រវត្តិនៃការទូទាត់ទេ</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -137,7 +137,7 @@ export default function PaymentHistory() {
                       {payment.FeeAssignment?.FeeStructure?.name}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      Transaction ID: {payment.transactionId}
+                      លេខប្រតិបត្តិការ: {payment.transactionId}
                     </p>
                     <div className="flex flex-wrap gap-4 mt-2 text-sm">
                       <span className="text-gray-600">
@@ -155,7 +155,7 @@ export default function PaymentHistory() {
                     <p className="text-xl font-bold text-gray-900">
                       {formatCurrency(payment.amount)}
                     </p>
-                    <span className="badge badge-success">Completed</span>
+                    <span className="badge badge-success">បានបញ្ចប់</span>
                   </div>
                   <button
                     onClick={() => downloadReceipt(payment.id)}
@@ -175,7 +175,7 @@ export default function PaymentHistory() {
       {data?.payments?.length > 0 && (
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Payment Timeline
+            លំដាប់ពេលវេលានៃការទូទាត់
           </h3>
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>

@@ -56,12 +56,12 @@ export default function StudentView() {
   if (!student) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Student not found</p>
+        <p className="text-gray-500">រកមិនឃើញគណនីនិស្សិតឡើយ</p>
         <button
           onClick={() => navigate('/admin/students')}
           className="mt-4 btn-primary"
         >
-          Back to Students
+          ត្រឡប់ទៅការគ្រប់គ្រងនិស្សិត
         </button>
       </div>
     );
@@ -74,12 +74,18 @@ export default function StudentView() {
       graduated: 'bg-blue-100 text-blue-700',
       suspended: 'bg-yellow-100 text-yellow-700',
     };
+    const labels = {
+      active: 'សកម្ម',
+      inactive: 'អសកម្ម',
+      graduated: 'បញ្ចប់ការសិក្សា',
+      suspended: 'ព្យួរការសិក្សា',
+    };
     return (
       <span
         className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status] || 'bg-gray-100 text-gray-700'
           }`}
       >
-        {status?.charAt(0).toUpperCase() + status?.slice(1) || 'N/A'}
+        {labels[status] || status || 'មិនមាន'}
       </span>
     );
   };
@@ -97,9 +103,9 @@ export default function StudentView() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Student Details
+              ព័ត៌មានលម្អិតរបស់និស្សិត
             </h1>
-            <p className="text-gray-600">View student information</p>
+            <p className="text-gray-600">មើលព័ត៌មានលម្អិត និងកំណត់ត្រានិស្សិត</p>
           </div>
         </div>
         <Link
@@ -107,7 +113,7 @@ export default function StudentView() {
           className="btn-primary flex items-center gap-2"
         >
           <PencilSquareIcon className="h-5 w-5" />
-          Edit Student
+          កែសម្រួលព័ត៌មាននិស្សិត
         </Link>
       </div>
 
@@ -128,7 +134,7 @@ export default function StudentView() {
               {getStatusBadge(student.status)}
             </div>
             <p className="text-gray-500 mb-1">
-              Student ID: {student.studentId}
+              លេខសម្គាល់និស្សិត៖ {student.studentId}
             </p>
             <p className="text-gray-500">{student.user?.email}</p>
           </div>
@@ -140,51 +146,59 @@ export default function StudentView() {
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <UserIcon className="h-5 w-5 text-primary-600" />
-            Personal Information
+            ព័ត៌មានផ្ទាល់ខ្លួន
           </h3>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Full Name
+              នាមត្រកូល និងនាមខ្លួន (ខ្មែរ)
             </label>
-            <p className="mt-1 text-gray-900">
+            <p className="mt-1 text-gray-900 font-medium">
               {student.user?.firstName} {student.user?.lastName}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Gender
+              អក្សរឡាតាំង
             </label>
-            <p className="mt-1 text-gray-900 capitalize">
-              {student.gender || 'N/A'}
+            <p className="mt-1 text-gray-900 font-medium uppercase">
+              {student.Full_Name || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Date of Birth
+              ភេទ
+            </label>
+            <p className="mt-1 text-gray-900 font-medium">
+              {student.gender === 'male' ? 'ប្រុស' : student.gender === 'female' ? 'ស្រី' : student.gender || 'មិនមាន'}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 uppercase">
+              ថ្ងៃខែឆ្នាំកំណើត
             </label>
             <p className="mt-1 text-gray-900">
-              {student.dateOfBirth ? formatDate(student.dateOfBirth) : 'N/A'}
+              {student.dateOfBirth ? formatDate(student.dateOfBirth) : 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              National ID
+              អត្តសញ្ញាណប័ណ្ណ
             </label>
-            <p className="mt-1 text-gray-900">{student.nationalId || 'N/A'}</p>
+            <p className="mt-1 text-gray-900">{student.nationalId || 'មិនមាន'}</p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Nationality
+              សញ្ជាតិ
             </label>
-            <p className="mt-1 text-gray-900">{student.nationality || 'N/A'}</p>
+            <p className="mt-1 text-gray-900">{student.nationality || 'មិនមាន'}</p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Religion
+              សាសនា
             </label>
-            <p className="mt-1 text-gray-900">{student.religion || 'N/A'}</p>
+            <p className="mt-1 text-gray-900">{student.religion || 'មិនមាន'}</p>
           </div>
         </div>
       </div>
@@ -194,7 +208,7 @@ export default function StudentView() {
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <PhoneIcon className="h-5 w-5 text-primary-600" />
-            Contact Information
+            ព័ត៌មានទំនាក់ទំនង
           </h3>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,10 +216,10 @@ export default function StudentView() {
             <EnvelopeIcon className="h-5 w-5 text-gray-400" />
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase">
-                Email
+                អ៊ីមែល
               </label>
               <p className="mt-1 text-gray-900">
-                {student.user?.email || 'N/A'}
+                {student.user?.email || 'មិនមាន'}
               </p>
             </div>
           </div>
@@ -213,10 +227,10 @@ export default function StudentView() {
             <PhoneIcon className="h-5 w-5 text-gray-400" />
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase">
-                Phone
+                លេខទូរស័ព្ទ
               </label>
               <p className="mt-1 text-gray-900">
-                {student.user?.phone || 'N/A'}
+                {student.user?.phone || 'មិនមាន'}
               </p>
             </div>
           </div>
@@ -224,10 +238,10 @@ export default function StudentView() {
             <MapPinIcon className="h-5 w-5 text-gray-400 mt-1" />
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase">
-                Address
+                អាសយដ្ឋាន
               </label>
               <p className="mt-1 text-gray-900">
-                {student.address || 'N/A'}
+                {student.address || 'មិនមាន'}
                 {student.city && `, ${student.city}`}
                 {student.state && `, ${student.state}`}
                 {student.country && `, ${student.country}`}
@@ -242,76 +256,82 @@ export default function StudentView() {
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <AcademicCapIcon className="h-5 w-5 text-primary-600" />
-            Academic Information
+            ព័ត៌មានសិក្សា
           </h3>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Study Level
-            </label>
-            <p className="mt-1 text-gray-900">{student.studyLevel || 'N/A'}</p>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 uppercase">
-              Class
-            </label>
-            <p className="mt-1 text-gray-900">{student.class || 'N/A'}</p>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 uppercase">
-              ជំនាញឯកទេស (Department)
+              កម្រិតសិក្សា
             </label>
             <p className="mt-1 text-gray-900">
-              {departmentsData?.find(d => d.id == student.department)?.name || student.department || 'N/A'}
+              {student.studyLevel === 'Bachelor' ? 'បរិញ្ញាបត្រ' : student.studyLevel === 'Associate' ? 'អនុបណ្ឌិត' : student.studyLevel === 'Diploma' ? 'ឌីប្លូម' : student.studyLevel === 'Certificate' ? 'វិញ្ញាបនប័ត្រ' : student.studyLevel || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Course
+              ឆ្នាំសិក្សា (ឆ្នាំទី)
             </label>
             <p className="mt-1 text-gray-900">
-              {coursesData?.find(c => c.id == student.course)?.name || student.course || 'N/A'}
+              {student.class === '1' ? 'ឆ្នាំទី១' : student.class === '2' ? 'ឆ្នាំទី២' : student.class === '3' ? 'ឆ្នាំទី៣' : student.class === '4' ? 'ឆ្នាំទី៤' : student.class === '5' ? 'ឆ្នាំទី៥' : student.class || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Semester
-            </label>
-            <p className="mt-1 text-gray-900">{student.semester || 'N/A'}</p>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 uppercase">
-              Academic Year
+              ជំនាញឯកទេស
             </label>
             <p className="mt-1 text-gray-900">
-              {student.academicYear || 'N/A'}
+              {departmentsData?.find(d => d.id == student.department)?.name || student.department || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Enrollment Date
+              មុខវិជ្ជា
+            </label>
+            <p className="mt-1 text-gray-900">
+              {coursesData?.find(c => c.id == student.course)?.name || student.course || 'មិនមាន'}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 uppercase">
+              ឆមាស
+            </label>
+            <p className="mt-1 text-gray-900">
+              {student.semester === '1st' ? 'ឆមាសទី១' : student.semester === '2nd' ? 'ឆមាសទី២' : student.semester || 'មិនមាន'}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 uppercase">
+              ឆ្នាំសិក្សា
+            </label>
+            <p className="mt-1 text-gray-900">
+              {student.academicYear || 'មិនមាន'}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-500 uppercase">
+              ថ្ងៃចូលរៀន
             </label>
             <p className="mt-1 text-gray-900">
               {student.enrollmentDate
                 ? formatDate(student.enrollmentDate)
-                : 'N/A'}
+                : 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Campus
+              មណ្ឌលសិក្សា
             </label>
             <p className="mt-1 text-gray-900">
-              {student.campus?.name || 'N/A'}
+              {student.campus?.name || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Study Time
+              វេនសិក្សា
             </label>
-            <p className="mt-1 text-gray-900 capitalize">
-              {student.studyTime || 'N/A'}
+            <p className="mt-1 text-gray-900">
+              {student.studyTime === 'morning' ? 'ព្រឹក' : student.studyTime === 'afternoon' ? 'រសៀល' : student.studyTime === 'evening' ? 'យប់' : student.studyTime === 'weekend' ? 'សៅរ៍-អាទិត្យ' : student.studyTime || 'មិនមាន'}
             </p>
           </div>
         </div>
@@ -322,40 +342,40 @@ export default function StudentView() {
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <UserGroupIcon className="h-5 w-5 text-primary-600" />
-            Guardian Information
+            ព័ត៌មានអាណាព្យាបាល
           </h3>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Guardian Name
+              ឈ្មោះអាណាព្យាបាល
             </label>
             <p className="mt-1 text-gray-900">
-              {student.guardianName || 'N/A'}
+              {student.guardianName || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Relationship
+              ត្រូវជា (ទំនាក់ទំនង)
             </label>
-            <p className="mt-1 text-gray-900 capitalize">
-              {student.guardianRelation || 'N/A'}
+            <p className="mt-1 text-gray-900">
+              {student.guardianRelation || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Guardian Phone
+              ទូរស័ព្ទអាណាព្យាបាល
             </label>
             <p className="mt-1 text-gray-900">
-              {student.guardianPhone || 'N/A'}
+              {student.guardianPhone || 'មិនមាន'}
             </p>
           </div>
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
-              Guardian Email
+              អ៊ីមែលអាណាព្យាបាល
             </label>
             <p className="mt-1 text-gray-900">
-              {student.guardianEmail || 'N/A'}
+              {student.guardianEmail || 'មិនមាន'}
             </p>
           </div>
         </div>
@@ -367,7 +387,7 @@ export default function StudentView() {
           <div className="p-6 border-b">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <CurrencyDollarIcon className="h-5 w-5 text-primary-600" />
-              Fee Assignments
+              កំណត់ត្រាការបង់ថ្លៃសិក្សា
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -375,19 +395,19 @@ export default function StudentView() {
               <thead>
                 <tr className="bg-gray-50">
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Fee Type
+                    ប្រភេទថ្លៃសិក្សា
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Amount
+                    តម្លៃសរុប
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Paid
+                    បានបង់
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Due Date
+                    កាលបរិច្ឆេទកំណត់បង់
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
+                    ស្ថានភាព
                   </th>
                 </tr>
               </thead>
@@ -395,7 +415,7 @@ export default function StudentView() {
                 {student.feeAssignments.map((assignment) => (
                   <tr key={assignment.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {assignment.feeStructure?.name || 'N/A'}
+                      {assignment.feeStructure?.name || 'មិនមាន'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatCurrency(assignment.amount)}
@@ -406,7 +426,7 @@ export default function StudentView() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {assignment.dueDate
                         ? formatDate(assignment.dueDate)
-                        : 'N/A'}
+                        : 'មិនមាន'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -417,8 +437,11 @@ export default function StudentView() {
                               : 'bg-red-100 text-red-700'
                           }`}
                       >
-                        {assignment.status?.charAt(0).toUpperCase() +
-                          assignment.status?.slice(1)}
+                        {assignment.status === 'paid'
+                          ? 'បង់រួចរាល់'
+                          : assignment.status === 'partial'
+                            ? 'បង់មួយផ្នែក'
+                            : 'មិនទាន់បង់'}
                       </span>
                     </td>
                   </tr>
@@ -436,10 +459,10 @@ export default function StudentView() {
             <CalendarIcon className="h-5 w-5 text-gray-400" />
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase">
-                Created At
+                ថ្ងៃបង្កើតគណនី
               </label>
               <p className="mt-1 text-gray-900">
-                {student.createdAt ? formatDate(student.createdAt) : 'N/A'}
+                {student.createdAt ? formatDate(student.createdAt) : 'មិនមាន'}
               </p>
             </div>
           </div>
@@ -447,10 +470,10 @@ export default function StudentView() {
             <CalendarIcon className="h-5 w-5 text-gray-400" />
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase">
-                Last Updated
+                ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ
               </label>
               <p className="mt-1 text-gray-900">
-                {student.updatedAt ? formatDate(student.updatedAt) : 'N/A'}
+                {student.updatedAt ? formatDate(student.updatedAt) : 'មិនមាន'}
               </p>
             </div>
           </div>

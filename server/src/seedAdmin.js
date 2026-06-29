@@ -27,8 +27,8 @@ async function seedAdmin() {
     const admin = await db.User.create({
       email: 'admin@school.edu',
       password: hashedPassword,
-      firstName: 'System',
-      lastName: 'Administrator',
+      firstName: 'ប្រព័ន្ធ',
+      lastName: 'អ្នកគ្រប់គ្រង',
       role: 'admin',
       isActive: true,
       isEmailVerified: true,

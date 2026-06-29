@@ -30,6 +30,15 @@ const generateTransactionId = () => {
   return `TXN-${timestamp}-${random}`;
 };
 
+// Get today's local date string in YYYY-MM-DD format
+const getTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Calculate late fee
 const calculateLateFee = (
   dueDate,
@@ -38,10 +47,22 @@ const calculateLateFee = (
   lateFeeAmount = 0,
   gracePeriodDays = 0
 ) => {
+  if (!dueDate) return { isOverdue: false, daysOverdue: 0, lateFee: 0 };
+  
   const today = new Date();
-  const due = new Date(dueDate);
+  today.setHours(0, 0, 0, 0);
+  
+  let due;
+  if (typeof dueDate === 'string') {
+    const [year, month, day] = dueDate.split('-').map(Number);
+    due = new Date(year, month - 1, day);
+  } else {
+    due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+  }
+
   const diffTime = today - due;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays <= gracePeriodDays) {
     return { isOverdue: false, daysOverdue: 0, lateFee: 0 };
@@ -132,6 +153,7 @@ const sanitizeSearchQuery = (query) => {
 };
 
 module.exports = {
+  getTodayStr,
   generateReceiptNumber,
   generateStudentId,
   generateTransactionId,
