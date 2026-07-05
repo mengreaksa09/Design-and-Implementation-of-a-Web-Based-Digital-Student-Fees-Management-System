@@ -30,7 +30,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: true,
     credentials: true,
   })
 );
@@ -96,7 +96,7 @@ db.sequelize
       console.log('Added telegramChatId column');
     } catch (err) {
       // Column might already exist, ignore error
-      if (!err.message.includes('duplicate column name')) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
         console.log(
           'telegramChatId column already exists or error:',
           err.message
@@ -111,7 +111,7 @@ db.sequelize
       console.log('Added telegramUsername column');
     } catch (err) {
       // Column might already exist, ignore error
-      if (!err.message.includes('duplicate column name')) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
         console.log(
           'telegramUsername column already exists or error:',
           err.message
@@ -127,8 +127,44 @@ db.sequelize
       console.log('Added course column');
     } catch (err) {
       // Column might already exist, ignore error
-      if (!err.message.includes('duplicate column name')) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
         console.log('course column already exists or error:', err.message);
+      }
+    }
+
+    // Add Student_ID column if it doesn't exist
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE students ADD COLUMN Student_ID VARCHAR(255);
+      `);
+      console.log('Added Student_ID column');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
+        console.log('Student_ID column already exists or error:', err.message);
+      }
+    }
+
+    // Add Full_Name column if it doesn't exist
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE students ADD COLUMN Full_Name VARCHAR(255);
+      `);
+      console.log('Added Full_Name column');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
+        console.log('Full_Name column already exists or error:', err.message);
+      }
+    }
+
+    // Add Telegram_Chat_ID column if it doesn't exist
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE students ADD COLUMN Telegram_Chat_ID VARCHAR(255);
+      `);
+      console.log('Added Telegram_Chat_ID column');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name') && !err.message.includes('Duplicate column name')) {
+        console.log('Telegram_Chat_ID column already exists or error:', err.message);
       }
     }
 

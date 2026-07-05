@@ -32,7 +32,6 @@ export default function DashboardLayout() {
     { name: 'ផ្ទាំងគ្រប់គ្រង', href: '/admin', icon: HomeIcon },
     { name: 'និស្សិត', href: '/admin/students', icon: UserGroupIcon },
     { name: 'ជំនាញឯកទេស', href: '/admin/departments', icon: AcademicCapIcon },
-    { name: 'មុខវិជ្ជា', href: '/admin/courses', icon: BookOpenIcon },
     {
       name: 'រចនាសម្ព័ន្ធថ្លៃសិក្សា',
       href: '/admin/fee-structures',

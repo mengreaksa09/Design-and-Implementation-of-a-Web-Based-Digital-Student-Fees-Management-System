@@ -34,20 +34,28 @@ export default function Courses() {
     accreditation: '',
   });
 
-  // Capitalize each word except common small words
+  // Capitalize each word
   const capitalizeWords = (str) => {
     const lowerCaseWords = ['and', 'or', 'of', 'the', 'in', 'on', 'at', 'to', 'for', 'with', 'a', 'an'];
     return str.split(' ').map((word, index) => {
-      // Always capitalize the first word
-      if (index === 0) {
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      if (!word) return word;
+      let w = word.toLowerCase();
+      if (index !== 0 && lowerCaseWords.includes(w)) return w;
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  };
+
+  // Auto-add dots for titles on blur
+  const formatTitlesWithDot = (str) => {
+    const titles = ['mr', 'mrs', 'ms', 'mis', 'dr', 'prof'];
+    return str.split(' ').map(word => {
+      if (!word) return word;
+      const w = word.toLowerCase();
+      const bareWord = w.endsWith('.') ? w.slice(0, -1) : w;
+      if (titles.includes(bareWord)) {
+        return word.endsWith('.') ? word : word + '.';
       }
-      // Don't capitalize common words
-      if (lowerCaseWords.includes(word.toLowerCase())) {
-        return word.toLowerCase();
-      }
-      // Capitalize other words
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      return word;
     }).join(' ');
   };
 
@@ -533,7 +541,10 @@ export default function Courses() {
                     type="text"
                     value={formData.coordinator}
                     onChange={(e) =>
-                      setFormData({ ...formData, coordinator: e.target.value })
+                      setFormData({ ...formData, coordinator: capitalizeWords(e.target.value) })
+                    }
+                    onBlur={(e) =>
+                      setFormData({ ...formData, coordinator: formatTitlesWithDot(e.target.value) })
                     }
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="Dr. Jane Smith"

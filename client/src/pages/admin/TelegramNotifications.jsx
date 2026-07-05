@@ -16,7 +16,6 @@ export default function TelegramNotifications() {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [courseFilter, setCourseFilter] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -29,21 +28,14 @@ export default function TelegramNotifications() {
     },
   });
 
-  // Dynamically extract unique courses from linked students
-  const uniqueCourses = [
-    ...new Set(linkedStudents?.map((s) => s.course).filter(Boolean)),
-  ];
-
-  // Filter students in memory by search term (name/ID) and course
+  // Filter students in memory by search term (name/ID)
   const filteredStudents = linkedStudents?.filter((student) => {
     const fullName = `${student.user?.firstName || ''} ${student.user?.lastName || ''}`.toLowerCase();
     const searchMatch =
       fullName.includes(searchTerm.toLowerCase()) ||
       student.studentId?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const courseMatch = !courseFilter || student.course === courseFilter;
-
-    return searchMatch && courseMatch;
+    return searchMatch;
   }) || [];
 
   // Computed Select-All State for filtered list
@@ -203,18 +195,7 @@ export default function TelegramNotifications() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select
-            className="input w-auto min-w-[200px]"
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-          >
-            <option value="">វគ្គសិក្សាទាំងអស់</option>
-            {uniqueCourses.map((course) => (
-              <option key={course} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
+
         </div>
       </div>
 
@@ -229,13 +210,13 @@ export default function TelegramNotifications() {
             <PaperAirplaneIcon className="h-12 w-12" />
           </div>
           <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            {searchTerm || courseFilter
+            {searchTerm
               ? 'រកមិនឃើញនិស្សិតស្របតាមការស្វែងរកទេ'
               : 'មិនទាន់មាននិស្សិតភ្ជាប់ជាមួយ Telegram នៅឡើយទេ'}
           </h3>
           <p className="text-gray-500 max-w-sm">
-            {searchTerm || courseFilter
-              ? 'សូមព្យាយាមផ្លាស់ប្តូរពាក្យគន្លឹះស្វែងរក ឬប្រភេទចម្រោះជំនាញផ្សេងទៀត។'
+            {searchTerm
+              ? 'សូមព្យាយាមផ្លាស់ប្តូរពាក្យគន្លឹះស្វែងរកផ្សេងទៀត។'
               : 'និស្សិតត្រូវភ្ជាប់គណនី Telegram របស់ពួកគេជាមុនសិន ដើម្បីអាចទទួលការជូនដំណឹងពីប្រព័ន្ធ។'}
           </p>
         </div>
@@ -270,9 +251,7 @@ export default function TelegramNotifications() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     អត្តសញ្ញាណនិស្សិត
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    វគ្គសិក្សា
-                  </th>
+
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ឈ្មោះអ្នកប្រើប្រាស់ Telegram
                   </th>
@@ -313,9 +292,7 @@ export default function TelegramNotifications() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {student.studentId}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.course || 'N/A'}
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       @{student.telegramUsername || 'N/A'}
                     </td>

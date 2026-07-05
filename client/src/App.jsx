@@ -20,7 +20,6 @@ import StudentManagement from './pages/admin/StudentManagement';
 import StudentForm from './pages/admin/StudentForm';
 import StudentView from './pages/admin/StudentView';
 import Departments from './pages/admin/Departments';
-import Courses from './pages/admin/Courses';
 import FeeStructures from './pages/admin/FeeStructures';
 import FeeAssignments from './pages/admin/FeeAssignments';
 import PaymentManagement from './pages/admin/PaymentManagement';
@@ -121,7 +120,6 @@ function App() {
           <Route path="students/:id" element={<StudentView />} />
           <Route path="students/:id/edit" element={<StudentForm />} />
           <Route path="departments" element={<Departments />} />
-          <Route path="courses" element={<Courses />} />
           <Route path="fee-structures" element={<FeeStructures />} />
           <Route path="fee-assignments" element={<FeeAssignments />} />
           <Route path="payments" element={<PaymentManagement />} />

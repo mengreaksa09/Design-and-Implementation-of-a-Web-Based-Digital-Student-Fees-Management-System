@@ -131,8 +131,6 @@ module.exports = (sequelize, DataTypes) => {
           // Sync Full_Name from passed names or existing fields
           if (student.firstName || student.lastName) {
             student.Full_Name = `${student.lastName || ''} ${student.firstName || ''}`.trim();
-          } else if (!student.Full_Name) {
-            student.Full_Name = 'ចាន់ សុខ'; // default fallback for seeded student
           }
         }
       },

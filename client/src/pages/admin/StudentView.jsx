@@ -36,14 +36,7 @@ export default function StudentView() {
     },
   });
 
-  // Fetch courses for display
-  const { data: coursesData } = useQuery({
-    queryKey: ['courses-list'],
-    queryFn: async () => {
-      const response = await api.get('/courses/list');
-      return response.data.data;
-    },
-  });
+
 
   if (isLoading) {
     return (
@@ -284,14 +277,7 @@ export default function StudentView() {
               {departmentsData?.find(d => d.id == student.department)?.name || student.department || 'មិនមាន'}
             </p>
           </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 uppercase">
-              មុខវិជ្ជា
-            </label>
-            <p className="mt-1 text-gray-900">
-              {coursesData?.find(c => c.id == student.course)?.name || student.course || 'មិនមាន'}
-            </p>
-          </div>
+
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase">
               ឆមាស

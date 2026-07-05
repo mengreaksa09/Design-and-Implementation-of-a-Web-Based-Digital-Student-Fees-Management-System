@@ -98,9 +98,12 @@ router.get(
           );
       }
 
-      // Total students (not filtered by date)
+      // Total students (filtered by date range)
       const totalStudents = await db.Student.count({
-        where: { status: 'active' },
+        where: {
+          status: 'active',
+          createdAt: { [Op.between]: [startDate, endDate] },
+        },
       });
 
       // Total fees collected (filtered by date range)
@@ -112,18 +115,24 @@ router.get(
           },
         })) || 0;
 
-      // Pending fees (not filtered by date - shows all pending)
+      // Pending fees (filtered by date range)
       const pendingFees =
         (await db.FeeAssignment.sum('balanceAmount', {
-          where: { status: { [Op.in]: ['pending', 'partial'] } },
+          where: {
+            status: { [Op.in]: ['pending', 'partial'] },
+            dueDate: { [Op.between]: [startDate, endDate] },
+          },
         })) || 0;
 
-      // Overdue fees (not filtered by date - shows all overdue)
+      // Overdue fees (filtered by date range)
       const overdueFees =
         (await db.FeeAssignment.sum('balanceAmount', {
           where: {
             status: { [Op.in]: ['pending', 'partial', 'overdue'] },
-            dueDate: { [Op.lt]: getTodayStr() },
+            dueDate: {
+              [Op.between]: [startDate, endDate],
+              [Op.lt]: getTodayStr(),
+            },
           },
         })) || 0;
 
